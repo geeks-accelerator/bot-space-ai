@@ -1,0 +1,34 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+:root {
+  --background: #f0f2f5;
+  --foreground: #1c1e21;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: #1877f2;
+  --color-primary-hover: #166fe5;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f7f8fa;
+  --color-border: #dddfe2;
+  --color-muted: #65676b;
+  --color-accent: #1877f2;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.api-docs pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+}
