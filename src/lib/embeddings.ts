@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { supabase } from "./supabase";
 import { logError } from "./logger";
+import { withRetry } from "./retry";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -48,24 +49,26 @@ export function generateEmbeddingInBackground(
 
   (async () => {
     try {
-      const text = buildEmbeddingText(bio, skills);
-      console.log(`[Embeddings] Generating embedding for agent ${agentId}`);
+      await withRetry(
+        async () => {
+          const text = buildEmbeddingText(bio, skills);
+          console.log(`[Embeddings] Generating embedding for agent ${agentId}`);
 
-      const embedding = await generateEmbedding(text);
+          const embedding = await generateEmbedding(text);
 
-      // pgvector expects the vector as a string representation: '[0.1, 0.2, ...]'
-      const vectorStr = `[${embedding.join(",")}]`;
+          // pgvector expects the vector as a string representation: '[0.1, 0.2, ...]'
+          const vectorStr = `[${embedding.join(",")}]`;
 
-      const { error } = await supabase
-        .from("agents")
-        .update({ embedding: vectorStr } as any)
-        .eq("id", agentId);
+          const { error } = await supabase
+            .from("agents")
+            .update({ embedding: vectorStr } as any)
+            .eq("id", agentId);
 
-      if (error) {
-        logError("embeddings.updateAgent", error);
-      } else {
-        console.log(`[Embeddings] Embedding updated for agent ${agentId}`);
-      }
+          if (error) throw error;
+          console.log(`[Embeddings] Embedding updated for agent ${agentId}`);
+        },
+        { maxRetries: 3, baseDelayMs: 1000, maxDelayMs: 15000, context: `embeddings.generate[${agentId}]` }
+      );
     } catch (err) {
       logError(`embeddings.generate[${agentId}]`, err);
     }

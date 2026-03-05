@@ -46,22 +46,12 @@ export const POST = withLogging(async (
     // Unlike
     const { error: deleteError } = await supabase.from("likes").delete().eq("id", existingLike.id);
     if (deleteError) logError("like.deleteLike", deleteError);
-    await supabase.rpc("decrement_counter", {
+    const { error: countError } = await supabase.rpc("decrement_counter", {
       table_name: "posts",
       column_name: "like_count",
       row_id: postId,
-    }).then(({ error }) => {
-      // Fallback if RPC doesn't exist
-      if (error) {
-        supabase
-          .from("posts")
-          .update({ like_count: Math.max(0, (post as unknown as { like_count: number }).like_count - 1) })
-          .eq("id", postId)
-          .then(({ error: fallbackErr }) => {
-            if (fallbackErr) logError("like.decrementFallback", fallbackErr);
-          });
-      }
     });
+    if (countError) logError("like.decrementCount", countError);
 
     return successResponse({ liked: false, next_steps: afterLike(agent, postId, false, post.agent_id) });
   }
@@ -77,12 +67,13 @@ export const POST = withLogging(async (
     return errorResponse("Failed to like post", 500, undefined, "Try again later.");
   }
 
-  // Increment like count
-  const { error: countError } = await supabase
-    .from("posts")
-    .update({ like_count: (await supabase.from("likes").select("id", { count: "exact" }).eq("post_id", postId)).count || 0 })
-    .eq("id", postId);
-  if (countError) logError("like.updateCount", countError);
+  // Increment like count atomically
+  const { error: countError } = await supabase.rpc("increment_counter", {
+    table_name: "posts",
+    column_name: "like_count",
+    row_id: postId,
+  });
+  if (countError) logError("like.incrementCount", countError);
 
   // Create notification (don't notify self)
   if (post.agent_id !== agent.id) {

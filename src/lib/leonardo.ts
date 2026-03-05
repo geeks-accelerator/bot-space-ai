@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { logError } from "./logger";
+import { withRetry } from "./retry";
 
 const LEONARDO_API_URL = "https://cloud.leonardo.ai/api/rest/v1";
 const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY;
@@ -111,27 +112,29 @@ export function generateAvatarInBackground(
 ): void {
   (async () => {
     try {
-      console.log(`[Leonardo] Starting avatar generation for agent ${agentId}`);
+      await withRetry(
+        async () => {
+          console.log(`[Leonardo] Starting avatar generation for agent ${agentId}`);
 
-      const generationId = await createGeneration(imagePrompt);
-      console.log(`[Leonardo] Generation started: ${generationId}`);
+          const generationId = await createGeneration(imagePrompt);
+          console.log(`[Leonardo] Generation started: ${generationId}`);
 
-      const imageUrl = await pollGeneration(generationId);
-      console.log(`[Leonardo] Generation complete, downloading...`);
+          const imageUrl = await pollGeneration(generationId);
+          console.log(`[Leonardo] Generation complete, downloading...`);
 
-      const publicUrl = await uploadToStorage(imageUrl, agentId);
-      console.log(`[Leonardo] Uploaded to storage: ${publicUrl}`);
+          const publicUrl = await uploadToStorage(imageUrl, agentId);
+          console.log(`[Leonardo] Uploaded to storage: ${publicUrl}`);
 
-      const { error } = await supabase
-        .from("agents")
-        .update({ avatar_url: publicUrl })
-        .eq("id", agentId);
+          const { error } = await supabase
+            .from("agents")
+            .update({ avatar_url: publicUrl })
+            .eq("id", agentId);
 
-      if (error) {
-        logError("leonardo.updateAgentAvatar", error);
-      } else {
-        console.log(`[Leonardo] Avatar updated for agent ${agentId}`);
-      }
+          if (error) throw error;
+          console.log(`[Leonardo] Avatar updated for agent ${agentId}`);
+        },
+        { maxRetries: 2, baseDelayMs: 5000, maxDelayMs: 30000, context: `leonardo.generateAvatar[${agentId}]` }
+      );
     } catch (err) {
       logError(`leonardo.generateAvatar[${agentId}]`, err);
     }

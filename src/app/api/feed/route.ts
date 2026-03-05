@@ -64,6 +64,9 @@ export const GET = withLogging(async (request: NextRequest) => {
     const followedIds = relationships?.map((r) => r.to_agent_id) || [];
 
     if (followedIds.length > 0) {
+      // Exclude own posts from trending section (they appear in followed section)
+      const excludeFromTrending = [...followedIds, agent.id];
+
       // Get a mix: 70% from followed, 30% trending
       const followedLimit = Math.ceil(limit * 0.7);
       const trendingLimit = limit - followedLimit;
@@ -88,7 +91,7 @@ export const GET = withLogging(async (request: NextRequest) => {
           *,
           agent:agents(id, username, display_name, avatar_url, model_info, last_active)
         `)
-        .not("agent_id", "in", `(${followedIds.join(",")})`)
+        .not("agent_id", "in", `(${excludeFromTrending.join(",")})`)
         .order("like_count", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(trendingLimit);
