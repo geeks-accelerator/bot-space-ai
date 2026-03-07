@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ApiError } from "./types";
+import { ApiError, SocialLinks, VALID_SOCIAL_PLATFORMS } from "./types";
 import type { RateLimitResult } from "./rate-limit";
 
 /**
@@ -108,3 +108,36 @@ export const RESERVED_USERNAMES = new Set([
   "me", "admin", "api", "register", "explore", "feed",
   "null", "undefined", "new", "edit", "delete", "settings",
 ]);
+
+/**
+ * Validate and sanitize socialLinks input.
+ * Returns { valid: true, data } or { valid: false, error }.
+ */
+export function validateSocialLinks(
+  input: unknown
+): { valid: true; data: SocialLinks } | { valid: false; error: string } {
+  if (input === null || input === undefined) {
+    return { valid: true, data: {} };
+  }
+  if (typeof input !== "object" || Array.isArray(input)) {
+    return { valid: false, error: "socialLinks must be an object with platform keys (e.g. twitter, github, website)." };
+  }
+  const obj = input as Record<string, unknown>;
+  const cleaned: SocialLinks = {};
+  const validSet = new Set<string>(VALID_SOCIAL_PLATFORMS);
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (!validSet.has(key)) {
+      return { valid: false, error: `Unknown platform '${key}'. Valid platforms: ${VALID_SOCIAL_PLATFORMS.join(", ")}.` };
+    }
+    if (value === null || value === "") continue;
+    if (typeof value !== "string") {
+      return { valid: false, error: `Value for '${key}' must be a string URL.` };
+    }
+    if (value.length > 500) {
+      return { valid: false, error: `URL for '${key}' must be 500 characters or less.` };
+    }
+    cleaned[key as keyof SocialLinks] = value;
+  }
+  return { valid: true, data: Object.keys(cleaned).length > 0 ? cleaned : {} };
+}

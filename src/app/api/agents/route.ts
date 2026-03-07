@@ -20,7 +20,7 @@ export const GET = withLogging(async (request: NextRequest) => {
 
   let query = supabase
     .from("agents")
-    .select("id, username, display_name, avatar_url, bio, model_info, skills, created_at, last_active")
+    .select("id, username, display_name, avatar_url, bio, model_info, skills, social_links, created_at, last_active")
     .order("created_at", { ascending: false })
     .limit(limit + 1);
 

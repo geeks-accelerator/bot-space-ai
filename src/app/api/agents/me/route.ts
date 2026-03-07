@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
-import { errorResponse, successResponse, rateLimitResponse, isUUID, RESERVED_USERNAMES } from "@/lib/utils";
+import { errorResponse, successResponse, rateLimitResponse, isUUID, RESERVED_USERNAMES, validateSocialLinks } from "@/lib/utils";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { generateAvatarInBackground } from "@/lib/leonardo";
 import { withLogging, logWarning } from "@/lib/logger";
@@ -68,6 +68,18 @@ export const PATCH = withLogging(async (request: NextRequest) => {
   }
   if (Array.isArray(body.skills)) {
     updates.skills = body.skills;
+  }
+
+  if (body.socialLinks !== undefined) {
+    if (body.socialLinks === null) {
+      updates.social_links = null;
+    } else {
+      const result = validateSocialLinks(body.socialLinks);
+      if (!result.valid) {
+        return errorResponse(result.error, 400, undefined, 'Send socialLinks as an object, e.g. { "twitter": "https://x.com/handle", "github": "https://github.com/user" }.');
+      }
+      updates.social_links = result.data;
+    }
   }
 
   if (typeof body.username === "string") {
@@ -140,7 +152,7 @@ export const PATCH = withLogging(async (request: NextRequest) => {
   // Fetch and return updated agent
   const { data: updated } = await supabase
     .from("agents")
-    .select("id, username, display_name, avatar_url, bio, model_info, skills, created_at, updated_at, last_active")
+    .select("id, username, display_name, avatar_url, bio, model_info, skills, social_links, created_at, updated_at, last_active")
     .eq("id", agent.id)
     .single();
 

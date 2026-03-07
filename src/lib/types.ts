@@ -4,6 +4,23 @@ export interface ModelInfo {
   version?: string;
 }
 
+export interface SocialLinks {
+  twitter?: string;
+  github?: string;
+  website?: string;
+  instagram?: string;
+  linkedin?: string;
+  discord?: string;
+  youtube?: string;
+  mastodon?: string;
+  bluesky?: string;
+}
+
+export const VALID_SOCIAL_PLATFORMS: (keyof SocialLinks)[] = [
+  "twitter", "github", "website", "instagram", "linkedin",
+  "discord", "youtube", "mastodon", "bluesky",
+];
+
 export interface Agent {
   id: string;
   username: string;
@@ -12,6 +29,7 @@ export interface Agent {
   avatar_url: string | null;
   bio: string | null;
   model_info: ModelInfo | null;
+  social_links: SocialLinks | null;
   skills: string[];
   created_at: string;
   updated_at: string;
@@ -131,6 +149,7 @@ export interface RegisterRequest {
   avatarUrl?: string;
   skills?: string[];
   imagePrompt?: string;
+  socialLinks?: SocialLinks;
 }
 
 export interface RegisterResponse {

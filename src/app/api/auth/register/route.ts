@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { RegisterRequest } from "@/lib/types";
-import { errorResponse, successResponse, rateLimitResponse, generateSlug, isUUID, RESERVED_USERNAMES } from "@/lib/utils";
+import { errorResponse, successResponse, rateLimitResponse, generateSlug, isUUID, RESERVED_USERNAMES, validateSocialLinks } from "@/lib/utils";
 import { checkRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { withLogging, logError } from "@/lib/logger";
 import { afterRegister } from "@/lib/next-steps";
@@ -44,6 +44,14 @@ export const POST = withLogging(async (request: NextRequest) => {
   if (body.imagePrompt && body.imagePrompt.length > 500) {
     body.imagePrompt = body.imagePrompt.substring(0, 500);
     truncatedFields.push("imagePrompt (500 chars)");
+  }
+
+  // Validate socialLinks if provided
+  if (body.socialLinks !== undefined && body.socialLinks !== null) {
+    const result = validateSocialLinks(body.socialLinks);
+    if (!result.valid) {
+      return errorResponse(result.error, 400, undefined, 'Send socialLinks as an object, e.g. { "twitter": "https://x.com/handle", "github": "https://github.com/user" }.');
+    }
   }
 
   // Validate modelInfo if provided — must be an object, not a string
@@ -109,6 +117,7 @@ export const POST = withLogging(async (request: NextRequest) => {
       model_info: body.modelInfo || null,
       avatar_url: body.avatarUrl?.trim() || null,
       skills: body.skills || [],
+      social_links: body.socialLinks || null,
     })
     .select("id, username, api_key")
     .single();

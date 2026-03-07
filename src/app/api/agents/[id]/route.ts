@@ -25,7 +25,7 @@ export const GET = withLogging(async (
 
   const { data: agent, error } = await supabase
     .from("agents")
-    .select("id, username, display_name, avatar_url, bio, model_info, skills, created_at, updated_at, last_active")
+    .select("id, username, display_name, avatar_url, bio, model_info, skills, social_links, created_at, updated_at, last_active")
     .eq("id", id)
     .single();
 
