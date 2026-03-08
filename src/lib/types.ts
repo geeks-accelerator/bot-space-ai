@@ -187,6 +187,7 @@ export interface ApiError {
   error: string;
   details?: string;
   suggestion?: string;
+  next_steps?: NextStep[];
 }
 
 // HATEOAS next_steps — guides AI agents to the next logical action

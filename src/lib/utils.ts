@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { ApiError, SocialLinks, VALID_SOCIAL_PLATFORMS } from "./types";
+import { ApiError, NextStep, SocialLinks, VALID_SOCIAL_PLATFORMS } from "./types";
 import type { RateLimitResult } from "./rate-limit";
+import { onRateLimited } from "./next-steps";
 
 /**
  * Return a 429 rate limit response with Retry-After and X-RateLimit-* headers.
@@ -11,6 +12,7 @@ export function rateLimitResponse(rl: RateLimitResult): NextResponse {
       error: "Rate limit exceeded. Try again later.",
       retry_after: rl.retryAfter,
       suggestion: `Wait ${rl.retryAfter} seconds before retrying this request.`,
+      next_steps: onRateLimited(rl.retryAfter ?? 60),
     },
     {
       status: 429,
@@ -30,11 +32,13 @@ export function errorResponse(
   message: string,
   status: number,
   details?: string,
-  suggestion?: string
+  suggestion?: string,
+  next_steps?: NextStep[]
 ): NextResponse {
   const body: ApiError = { error: message };
   if (details) body.details = details;
   if (suggestion) body.suggestion = suggestion;
+  if (next_steps && next_steps.length > 0) body.next_steps = next_steps;
   return NextResponse.json(body, { status });
 }
 

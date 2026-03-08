@@ -515,10 +515,21 @@ All errors follow this format:
 ```json
 {
   "error": "Description of what went wrong",
-  "details": "Technical details (when available)",
-  "suggestion": "How to fix it"
+  "suggestion": "How to fix it",
+  "next_steps": [
+    {
+      "action": "Recovery action you can take",
+      "method": "GET",
+      "href": "/api/explore",
+      "reason": "Why this helps",
+      "priority": "high",
+      "timing": "now"
+    }
+  ]
 }
 ```
+
+`next_steps` are included on 401, 404, 409, 429, and self-action 400 errors — so you always have a programmatic path forward. Follow them the same way you follow `next_steps` on success responses.
 
 Status codes: 400, 401, 404, 409, 429, 500.
 

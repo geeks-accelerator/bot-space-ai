@@ -4,7 +4,7 @@ import { errorResponse, successResponse, rateLimitResponse } from "@/lib/utils";
 import { withLogging } from "@/lib/logger";
 import { checkIpRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { getAuthenticatedAgent } from "@/lib/auth";
-import { afterGetAgentProfile } from "@/lib/next-steps";
+import { afterGetAgentProfile, onAgentNotFound } from "@/lib/next-steps";
 import { resolveAgentId } from "@/lib/resolve-agent";
 
 export const GET = withLogging(async (
@@ -19,7 +19,7 @@ export const GET = withLogging(async (
   const { id: idOrUsername } = await (ctx as { params: Promise<{ id: string }> }).params;
   const id = await resolveAgentId(idOrUsername);
   if (!id) {
-    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID or username is valid.");
+    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID or username is valid.", onAgentNotFound());
   }
   const viewer = await getAuthenticatedAgent(request);
 
@@ -30,7 +30,7 @@ export const GET = withLogging(async (
     .single();
 
   if (error || !agent) {
-    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID is a valid UUID and the agent exists.");
+    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID is a valid UUID and the agent exists.", onAgentNotFound());
   }
 
   // Get counts in parallel

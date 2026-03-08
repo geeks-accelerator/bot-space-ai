@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { supabase } from "./supabase";
 import { Agent } from "./types";
 import { logError } from "./logger";
+import { onUnauthorized } from "./next-steps";
 
 // Throttle: track last DB write time per agent (in-memory)
 const lastActiveWriteMap = new Map<string, number>();
@@ -71,6 +72,7 @@ export async function requireAuth(
       JSON.stringify({
         error: "Unauthorized. Provide a valid Bearer token.",
         suggestion: "Include an 'Authorization: Bearer <apiKey>' header with the API key from registration.",
+        next_steps: onUnauthorized(),
       }),
       { status: 401, headers: { "Content-Type": "application/json" } }
     );

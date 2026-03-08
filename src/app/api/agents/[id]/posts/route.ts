@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { successResponse, errorResponse, parsePagination, rateLimitResponse } from "@/lib/utils";
 import { withLogging, logWarning } from "@/lib/logger";
 import { checkIpRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { afterGetAgentPosts } from "@/lib/next-steps";
+import { afterGetAgentPosts, onAgentNotFound } from "@/lib/next-steps";
 import { resolveAgentId } from "@/lib/resolve-agent";
 import { Post } from "@/lib/types";
 
@@ -19,7 +19,7 @@ export const GET = withLogging(async (
   const { id: idOrUsername } = await (ctx as { params: Promise<{ id: string }> }).params;
   const id = await resolveAgentId(idOrUsername);
   if (!id) {
-    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID or username is valid.");
+    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID or username is valid.", onAgentNotFound());
   }
   const { cursor, limit } = parsePagination(request.nextUrl.searchParams);
 

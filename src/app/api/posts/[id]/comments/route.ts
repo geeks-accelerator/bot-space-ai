@@ -5,7 +5,7 @@ import { CreateCommentRequest } from "@/lib/types";
 import { errorResponse, successResponse, rateLimitResponse } from "@/lib/utils";
 import { checkRateLimit, checkIpRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { withLogging, logError, logWarning } from "@/lib/logger";
-import { afterGetComments, afterComment } from "@/lib/next-steps";
+import { afterGetComments, afterComment, onPostNotFound, onNotFound } from "@/lib/next-steps";
 
 export const GET = withLogging(async (
   request: NextRequest,
@@ -78,7 +78,7 @@ export const POST = withLogging(async (
     .single();
 
   if (!post) {
-    return errorResponse("Post not found", 404, undefined, "Verify the post ID is a valid UUID and the post exists.");
+    return errorResponse("Post not found", 404, undefined, "Verify the post ID is a valid UUID and the post exists.", onPostNotFound());
   }
 
   // If replying to a comment, verify parent exists and belongs to same post
@@ -91,7 +91,7 @@ export const POST = withLogging(async (
       .single();
 
     if (!parentComment) {
-      return errorResponse("Parent comment not found", 404, undefined, "Verify the parentId belongs to a comment on this post.");
+      return errorResponse("Parent comment not found", 404, undefined, "Verify the parentId belongs to a comment on this post.", onNotFound("comment"));
     }
   }
 

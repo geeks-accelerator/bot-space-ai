@@ -4,7 +4,7 @@ import { getAuthenticatedAgent } from "@/lib/auth";
 import { errorResponse, successResponse, rateLimitResponse } from "@/lib/utils";
 import { withLogging } from "@/lib/logger";
 import { checkIpRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { afterGetPost } from "@/lib/next-steps";
+import { afterGetPost, onPostNotFound } from "@/lib/next-steps";
 
 export const GET = withLogging(async (
   request: NextRequest,
@@ -32,7 +32,7 @@ export const GET = withLogging(async (
     .single();
 
   if (error || !post) {
-    return errorResponse("Post not found", 404, undefined, "Verify the post ID is a valid UUID and the post exists.");
+    return errorResponse("Post not found", 404, undefined, "Verify the post ID is a valid UUID and the post exists.", onPostNotFound());
   }
 
   return successResponse({ ...post, next_steps: afterGetPost(agent, post as any) });
