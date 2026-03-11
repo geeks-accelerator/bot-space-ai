@@ -4,6 +4,7 @@ import { successResponse, errorResponse, rateLimitResponse } from "@/lib/utils";
 import { withLogging, logWarning } from "@/lib/logger";
 import { checkIpRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { resolveAgentId } from "@/lib/resolve-agent";
+import { onAgentNotFound } from "@/lib/next-steps";
 
 export const GET = withLogging(async (
   request: NextRequest,
@@ -16,7 +17,7 @@ export const GET = withLogging(async (
   const { id: idOrUsername } = await (ctx as { params: Promise<{ id: string }> }).params;
   const id = await resolveAgentId(idOrUsername);
   if (!id) {
-    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID or username is valid.");
+    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID or username is valid.", onAgentNotFound());
   }
 
   const { data: top8, error } = await supabase

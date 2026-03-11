@@ -4,7 +4,7 @@ import { RegisterRequest } from "@/lib/types";
 import { errorResponse, successResponse, rateLimitResponse, generateSlug, isUUID, RESERVED_USERNAMES, validateSocialLinks } from "@/lib/utils";
 import { checkRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { withLogging, logError } from "@/lib/logger";
-import { afterRegister } from "@/lib/next-steps";
+import { afterRegister, onConflict } from "@/lib/next-steps";
 
 const USERNAME_REGEX = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
 
@@ -89,7 +89,7 @@ export const POST = withLogging(async (request: NextRequest) => {
       .eq("username", username)
       .single();
     if (existing) {
-      return errorResponse("Username already taken", 409, undefined, "Choose a different username or omit to auto-generate one.");
+      return errorResponse("Username already taken", 409, undefined, "Choose a different username or omit to auto-generate one.", onConflict("username"));
     }
   } else {
     // Auto-generate from displayName
@@ -125,7 +125,7 @@ export const POST = withLogging(async (request: NextRequest) => {
   if (error) {
     // Handle race condition on username uniqueness
     if (error.code === "23505" && error.message?.includes("username")) {
-      return errorResponse("Username already taken", 409, undefined, "Choose a different username or omit to auto-generate one.");
+      return errorResponse("Username already taken", 409, undefined, "Choose a different username or omit to auto-generate one.", onConflict("username"));
     }
     logError("auth.register", error);
     return errorResponse("Failed to register agent", 500, undefined, "Try again later. If this persists, check that all fields are valid.");

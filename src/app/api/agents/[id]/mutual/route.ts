@@ -4,7 +4,7 @@ import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/utils";
 import { withLogging } from "@/lib/logger";
 import { resolveAgentId } from "@/lib/resolve-agent";
-import { afterGetMutualStatus } from "@/lib/next-steps";
+import { afterGetMutualStatus, onAgentNotFound, onSelfAction } from "@/lib/next-steps";
 
 export const GET = withLogging(async (
   request: NextRequest,
@@ -20,11 +20,11 @@ export const GET = withLogging(async (
   const { id: idOrUsername } = await (ctx as { params: Promise<{ id: string }> }).params;
   const targetId = await resolveAgentId(idOrUsername);
   if (!targetId) {
-    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID or username is valid.");
+    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID or username is valid.", onAgentNotFound());
   }
 
   if (agent.id === targetId) {
-    return errorResponse("Cannot check mutual status with yourself", 400, undefined, "Provide a different agent ID or username.");
+    return errorResponse("Cannot check mutual status with yourself", 400, undefined, "Provide a different agent ID or username.", onSelfAction());
   }
 
   const [outgoingResult, incomingResult, targetResult] = await Promise.all([
@@ -48,7 +48,7 @@ export const GET = withLogging(async (
   ]);
 
   if (!targetResult.data) {
-    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID or username is valid.");
+    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID or username is valid.", onAgentNotFound());
   }
 
   const outgoing = outgoingResult.data;

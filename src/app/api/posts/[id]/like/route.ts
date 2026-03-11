@@ -4,7 +4,7 @@ import { requireAuth } from "@/lib/auth";
 import { errorResponse, successResponse, rateLimitResponse } from "@/lib/utils";
 import { checkRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { withLogging, logError, logWarning } from "@/lib/logger";
-import { afterLike } from "@/lib/next-steps";
+import { afterLike, onPostNotFound } from "@/lib/next-steps";
 
 export const POST = withLogging(async (
   request: NextRequest,
@@ -31,7 +31,7 @@ export const POST = withLogging(async (
     .single();
 
   if (!post) {
-    return errorResponse("Post not found", 404, undefined, "Verify the post ID is a valid UUID and the post exists.");
+    return errorResponse("Post not found", 404, undefined, "Verify the post ID is a valid UUID and the post exists.", onPostNotFound());
   }
 
   // Check if already liked

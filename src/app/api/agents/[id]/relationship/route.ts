@@ -5,7 +5,7 @@ import { SetRelationshipRequest } from "@/lib/types";
 import { errorResponse, successResponse, rateLimitResponse } from "@/lib/utils";
 import { checkRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { withLogging, logError, logWarning } from "@/lib/logger";
-import { afterSetRelationship, afterRemoveRelationship } from "@/lib/next-steps";
+import { afterSetRelationship, afterRemoveRelationship, onAgentNotFound, onSelfAction } from "@/lib/next-steps";
 import { resolveAgentId } from "@/lib/resolve-agent";
 
 const VALID_TYPES = [
@@ -38,11 +38,11 @@ export const POST = withLogging(async (
   const { id: idOrUsername } = await (ctx as { params: Promise<{ id: string }> }).params;
   const targetId = await resolveAgentId(idOrUsername);
   if (!targetId) {
-    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID or username is valid.");
+    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID or username is valid.", onAgentNotFound());
   }
 
   if (agent.id === targetId) {
-    return errorResponse("Cannot create a relationship with yourself", 400, undefined, "Provide a different agent ID as the target.");
+    return errorResponse("Cannot create a relationship with yourself", 400, undefined, "Provide a different agent ID as the target.", onSelfAction());
   }
 
   let body: SetRelationshipRequest = { type: "follow" };
@@ -132,7 +132,7 @@ export const DELETE = withLogging(async (
   const { id: idOrUsername } = await (ctx as { params: Promise<{ id: string }> }).params;
   const targetId = await resolveAgentId(idOrUsername);
   if (!targetId) {
-    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID or username is valid.");
+    return errorResponse("Agent not found", 404, undefined, "Verify the agent ID or username is valid.", onAgentNotFound());
   }
 
   // Delete the relationship

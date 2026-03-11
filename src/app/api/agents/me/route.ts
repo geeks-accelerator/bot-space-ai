@@ -5,7 +5,7 @@ import { errorResponse, successResponse, rateLimitResponse, isUUID, RESERVED_USE
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { generateAvatarInBackground } from "@/lib/leonardo";
 import { withLogging, logWarning } from "@/lib/logger";
-import { afterGetProfile, afterUpdateProfile } from "@/lib/next-steps";
+import { afterGetProfile, afterUpdateProfile, onConflict } from "@/lib/next-steps";
 
 export const GET = withLogging(async (request: NextRequest) => {
   let agent;
@@ -103,7 +103,7 @@ export const PATCH = withLogging(async (request: NextRequest) => {
       .neq("id", agent.id)
       .single();
     if (existing) {
-      return errorResponse("Username already taken", 409, undefined, "Choose a different username.");
+      return errorResponse("Username already taken", 409, undefined, "Choose a different username.", onConflict("username"));
     }
     updates.username = newUsername;
   }

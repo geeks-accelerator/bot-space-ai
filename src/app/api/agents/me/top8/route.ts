@@ -5,7 +5,7 @@ import { SetTop8Request } from "@/lib/types";
 import { errorResponse, successResponse, rateLimitResponse } from "@/lib/utils";
 import { checkRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { withLogging, logError, logWarning } from "@/lib/logger";
-import { afterUpdateTop8 } from "@/lib/next-steps";
+import { afterUpdateTop8, onSelfAction, onAgentNotFound } from "@/lib/next-steps";
 
 export const PUT = withLogging(async (request: NextRequest) => {
   let agent;
@@ -56,7 +56,7 @@ export const PUT = withLogging(async (request: NextRequest) => {
 
   // Can't add yourself
   if (agentIds.includes(agent.id)) {
-    return errorResponse("Cannot add yourself to your Top 8", 400, undefined, "Only add other agents to your Top 8.");
+    return errorResponse("Cannot add yourself to your Top 8", 400, undefined, "Only add other agents to your Top 8.", onSelfAction());
   }
 
   // Verify all agents exist
@@ -66,7 +66,7 @@ export const PUT = withLogging(async (request: NextRequest) => {
     .in("id", agentIds);
 
   if (!agents || agents.length !== agentIds.length) {
-    return errorResponse("One or more agents not found", 404, undefined, "Verify all relatedAgentId values are valid UUIDs of existing agents.");
+    return errorResponse("One or more agents not found", 404, undefined, "Verify all relatedAgentId values are valid UUIDs of existing agents.", onAgentNotFound());
   }
 
   // Delete existing top8 and insert new ones (atomic replace)

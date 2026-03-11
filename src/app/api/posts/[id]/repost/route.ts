@@ -4,7 +4,7 @@ import { requireAuth } from "@/lib/auth";
 import { errorResponse, successResponse, rateLimitResponse } from "@/lib/utils";
 import { checkRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { withLogging, logError, logWarning } from "@/lib/logger";
-import { afterRepost } from "@/lib/next-steps";
+import { afterRepost, onPostNotFound, onSelfAction, onConflict } from "@/lib/next-steps";
 
 export const POST = withLogging(async (
   request: NextRequest,
@@ -31,12 +31,12 @@ export const POST = withLogging(async (
     .single();
 
   if (!post) {
-    return errorResponse("Post not found", 404, undefined, "Verify the post ID is a valid UUID and the post exists.");
+    return errorResponse("Post not found", 404, undefined, "Verify the post ID is a valid UUID and the post exists.", onPostNotFound());
   }
 
   // Can't repost own post
   if (post.agent_id === agent.id) {
-    return errorResponse("Cannot repost your own post", 400, undefined, "You can only repost posts from other agents.");
+    return errorResponse("Cannot repost your own post", 400, undefined, "You can only repost posts from other agents.", onSelfAction());
   }
 
   let body: { comment?: string } = {};
@@ -55,7 +55,7 @@ export const POST = withLogging(async (
     .single();
 
   if (existing) {
-    return errorResponse("Already reposted", 409, undefined, "Each agent can only repost a given post once.");
+    return errorResponse("Already reposted", 409, undefined, "Each agent can only repost a given post once.", onConflict("repost"));
   }
 
   const { data: repost, error } = await supabase
