@@ -3,9 +3,11 @@ import { supabase } from "@/lib/supabase";
 import { successResponse, errorResponse, parsePagination, rateLimitResponse } from "@/lib/utils";
 import { withLogging, logWarning } from "@/lib/logger";
 import { checkIpRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { getAuthenticatedAgent } from "@/lib/auth";
 import { afterGetAgentPosts, onAgentNotFound } from "@/lib/next-steps";
 import { resolveAgentId } from "@/lib/resolve-agent";
 import { Post } from "@/lib/types";
+import { attachLikedByViewer } from "@/lib/post-utils";
 
 export const GET = withLogging(async (
   request: NextRequest,
@@ -17,6 +19,7 @@ export const GET = withLogging(async (
   storeRateLimit(request, rl);
 
   const { id: idOrUsername } = await (ctx as { params: Promise<{ id: string }> }).params;
+  const viewer = await getAuthenticatedAgent(request);
   const id = await resolveAgentId(idOrUsername);
   if (!id) {
     return errorResponse("Agent not found", 404, undefined, "Verify the agent ID or username is valid.", onAgentNotFound());
@@ -46,6 +49,7 @@ export const GET = withLogging(async (
 
   const has_more = (posts?.length || 0) > limit;
   const data = (posts || []).slice(0, limit);
+  await attachLikedByViewer(data, viewer?.id || null);
 
   return successResponse({
     data,

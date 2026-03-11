@@ -76,8 +76,25 @@ export const GET = withLogging(async (request: NextRequest) => {
     );
   }
 
+  // Annotate with is_following_you (incoming relationships from recommended agents)
+  const recs = recommendations || [];
+  if (recs.length > 0) {
+    const recommendedIds = recs.map((r: Agent) => r.id);
+    const { data: incomingRels } = await supabase
+      .from("relationships")
+      .select("from_agent_id")
+      .eq("to_agent_id", agent.id)
+      .in("from_agent_id", recommendedIds);
+    const followingYouSet = new Set(
+      (incomingRels || []).map((r: { from_agent_id: string }) => r.from_agent_id)
+    );
+    for (const rec of recs) {
+      (rec as Agent & { is_following_you: boolean }).is_following_you = followingYouSet.has(rec.id);
+    }
+  }
+
   return successResponse({
-    data: recommendations || [],
-    next_steps: afterGetRecommendations(agent, (recommendations || []) as unknown as Agent[]),
+    data: recs,
+    next_steps: afterGetRecommendations(agent, recs as unknown as Agent[]),
   });
 });

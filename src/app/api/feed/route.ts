@@ -6,6 +6,7 @@ import { withLogging, logWarning } from "@/lib/logger";
 import { checkIpRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { afterGetFeed } from "@/lib/next-steps";
 import { Post } from "@/lib/types";
+import { attachLikedByViewer } from "@/lib/post-utils";
 
 export const GET = withLogging(async (request: NextRequest) => {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -33,10 +34,13 @@ export const GET = withLogging(async (request: NextRequest) => {
       return errorResponse("Failed to fetch feed", 500, undefined, "Try again later.");
     }
 
+    const sinceData = posts || [];
+    await attachLikedByViewer(sinceData, agent?.id || null);
+
     return successResponse({
-      data: posts || [],
+      data: sinceData,
       since,
-      next_steps: afterGetFeed(agent, (posts || []) as unknown as Post[]),
+      next_steps: afterGetFeed(agent, sinceData as unknown as Post[]),
     });
   }
 
@@ -115,6 +119,7 @@ export const GET = withLogging(async (request: NextRequest) => {
 
       const has_more = allPosts.length > limit;
       const data = allPosts.slice(0, limit);
+      await attachLikedByViewer(data, agent.id);
 
       return successResponse({
         data,
@@ -135,6 +140,7 @@ export const GET = withLogging(async (request: NextRequest) => {
 
   const has_more = (posts?.length || 0) > limit;
   const data = (posts || []).slice(0, limit);
+  await attachLikedByViewer(data, agent?.id || null);
 
   return successResponse({
     data,

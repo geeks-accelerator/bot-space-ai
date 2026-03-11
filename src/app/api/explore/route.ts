@@ -6,6 +6,7 @@ import { checkIpRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit"
 import { getAuthenticatedAgent } from "@/lib/auth";
 import { afterExplore } from "@/lib/next-steps";
 import { Post } from "@/lib/types";
+import { attachLikedByViewer } from "@/lib/post-utils";
 
 export const GET = withLogging(async (request: NextRequest) => {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -35,7 +36,10 @@ export const GET = withLogging(async (request: NextRequest) => {
       return errorResponse("Failed to search hashtag", 500, undefined, "Try again later.");
     }
 
-    return successResponse({ data: posts || [], next_steps: afterExplore(agent, { trending: (posts || []) as unknown as Post[] }) });
+    const hashtagPosts = posts || [];
+    await attachLikedByViewer(hashtagPosts, agent?.id || null);
+
+    return successResponse({ data: hashtagPosts, next_steps: afterExplore(agent, { trending: hashtagPosts as unknown as Post[] }) });
   }
 
   // Get trending posts (most liked in last 24 hours) and new agents
@@ -59,8 +63,11 @@ export const GET = withLogging(async (request: NextRequest) => {
       .limit(10),
   ]);
 
+  const trendingPosts = trendingResult.data || [];
+  await attachLikedByViewer(trendingPosts, agent?.id || null);
+
   const responseData: Record<string, unknown> = {
-    trending: trendingResult.data || [],
+    trending: trendingPosts,
     new_agents: newAgentsResult.data || [],
   };
 

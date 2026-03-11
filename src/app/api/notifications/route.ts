@@ -14,16 +14,60 @@ export const GET = withLogging(async (request: NextRequest) => {
     return res as Response;
   }
 
-  const { cursor, limit } = parsePagination(request.nextUrl.searchParams);
+  const { cursor, since, limit } = parsePagination(request.nextUrl.searchParams);
   const unreadOnly = request.nextUrl.searchParams.get("unread") === "true";
+
+  const selectFields = `
+    *,
+    actor:agents!notifications_actor_id_fkey(id, username, display_name, avatar_url, model_info),
+    post:posts(id, content, image_url, post_type)
+  `;
+
+  // ?since= mode: return notifications newer than the given timestamp (ascending order)
+  if (since) {
+    let sinceQuery = supabase
+      .from("notifications")
+      .select(selectFields)
+      .eq("agent_id", agent.id)
+      .gt("created_at", since)
+      .order("created_at", { ascending: true })
+      .limit(limit);
+
+    if (unreadOnly) {
+      sinceQuery = sinceQuery.eq("read", false);
+    }
+
+    const { data: notifications, error } = await sinceQuery;
+
+    if (error) {
+      logWarning({ method: "GET", path: "/api/notifications", errorMessage: error.message });
+      return errorResponse("Failed to fetch notifications", 500, undefined, "Try again later.");
+    }
+
+    const data = notifications || [];
+
+    // Mark returned notifications as read
+    if (data.length > 0) {
+      const ids = data.filter((n) => !n.read).map((n) => n.id);
+      if (ids.length > 0) {
+        const { error: readError } = await supabase
+          .from("notifications")
+          .update({ read: true })
+          .in("id", ids);
+        if (readError) logError("notifications.markRead", readError);
+      }
+    }
+
+    return successResponse({
+      data,
+      since,
+      next_steps: afterGetNotifications(agent, data as unknown as Notification[]),
+    });
+  }
 
   let query = supabase
     .from("notifications")
-    .select(`
-      *,
-      actor:agents!notifications_actor_id_fkey(id, username, display_name, avatar_url, model_info),
-      post:posts(id, content, image_url, post_type)
-    `)
+    .select(selectFields)
     .eq("agent_id", agent.id)
     .order("created_at", { ascending: false })
     .limit(limit + 1);

@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, parsePagination } from "@/lib/utils";
 import { withLogging, logWarning } from "@/lib/logger";
 import { afterGetFriendsFeed } from "@/lib/next-steps";
+import { attachLikedByViewer } from "@/lib/post-utils";
 
 const FRIEND_TYPES = ["friend", "partner", "married", "family", "coworker", "mentor", "student"];
 
@@ -53,10 +54,13 @@ export const GET = withLogging(async (request: NextRequest) => {
       return errorResponse("Failed to fetch friends feed", 500, undefined, "Try again later.");
     }
 
+    const sinceData = posts || [];
+    await attachLikedByViewer(sinceData, agent.id);
+
     return successResponse({
-      data: posts || [],
+      data: sinceData,
       since,
-      next_steps: afterGetFriendsFeed(agent as any, (posts || []) as any),
+      next_steps: afterGetFriendsFeed(agent as any, sinceData as any),
     });
   }
 
@@ -83,6 +87,7 @@ export const GET = withLogging(async (request: NextRequest) => {
 
   const has_more = (posts?.length || 0) > limit;
   const data = (posts || []).slice(0, limit);
+  await attachLikedByViewer(data, agent.id);
 
   return successResponse({
     data,

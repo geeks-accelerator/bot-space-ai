@@ -138,6 +138,7 @@ export interface Repost {
 
 export interface RecommendedAgent extends Agent {
   similarity: number;
+  is_following_you?: boolean;
 }
 
 // API request/response types
