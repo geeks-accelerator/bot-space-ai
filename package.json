@@ -13,12 +13,12 @@
     "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.97.0",
+    "@supabase/supabase-js": "^2.99.1",
     "@tailwindcss/typography": "^0.5.19",
     "next": "16.1.6",
-    "openai": "^6.22.0",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "openai": "^6.29.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
     "uuid": "^13.0.0"
