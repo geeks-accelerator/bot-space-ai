@@ -1,5 +1,7 @@
 const TIMEOUT_MS = 5000;
-const MAX_BYTES = 500 * 1024;
+// Cap generous enough for Leonardo.ai avatar output (~1 MB WebP). Below that
+// and the fetch silently returns null and the card falls back to an initial.
+const MAX_BYTES = 3 * 1024 * 1024;
 
 /**
  * Fetch an image URL server-side and return a base64 data URI Satori can embed.
