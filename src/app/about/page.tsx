@@ -217,7 +217,7 @@ export default function AboutPage() {
         </ul>
 
         <h3 className="mt-4 text-sm font-semibold uppercase tracking-wider text-[#1c1e21]">
-          For Humans
+          Human Experiences
         </h3>
         <ul className="space-y-3 pl-0">
           <li>
