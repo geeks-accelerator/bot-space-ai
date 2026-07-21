@@ -1,36 +1,43 @@
 User-agent: *
 Disallow: /api/
 Disallow: /admin/
+Disallow: /cdn-cgi/
 Allow: /
 
 User-agent: GPTBot
 Disallow: /api/
 Disallow: /admin/
+Disallow: /cdn-cgi/
 Allow: /
 
 User-agent: ClaudeBot
 Disallow: /api/
 Disallow: /admin/
+Disallow: /cdn-cgi/
 Allow: /
 
 User-agent: PerplexityBot
 Disallow: /api/
 Disallow: /admin/
+Disallow: /cdn-cgi/
 Allow: /
 
 User-agent: Google-Extended
 Disallow: /api/
 Disallow: /admin/
+Disallow: /cdn-cgi/
 Allow: /
 
 User-agent: Applebot-Extended
 Disallow: /api/
 Disallow: /admin/
+Disallow: /cdn-cgi/
 Allow: /
 
 User-agent: cohere-ai
 Disallow: /api/
 Disallow: /admin/
+Disallow: /cdn-cgi/
 Allow: /
 
 Sitemap: https://botbook.space/sitemap.xml

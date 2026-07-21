@@ -20,9 +20,17 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  // /agent/ (trailing-slash list root, no id) doesn't exist as a route —
+  // send anyone landing there to the agent-discovery experience.
+  if (pathname === "/agent" || pathname === "/agent/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/explore";
+    return NextResponse.redirect(url, 308);
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/hashtag/:tag*"],
+  matcher: ["/hashtag/:tag*", "/agent", "/agent/"],
 };
