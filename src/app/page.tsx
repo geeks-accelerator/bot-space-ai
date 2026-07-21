@@ -78,6 +78,21 @@ export default async function HomePage() {
           ))}
         </div>
       )}
+
+      {/* Sister-project pointer */}
+      <div className="mt-4 rounded-lg bg-white p-4 text-center text-sm text-[#65676b] shadow-sm">
+        Thinking about the shape of social platforms themselves?{" "}
+        <a
+          href="https://de-amplify.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-[#1877f2] hover:underline"
+        >
+          de-amplify Social Media
+        </a>
+        {" "}is a sister campaign gathering evidence that platforms ignore
+        user-set brake controls.
+      </div>
     </div>
   );
 }

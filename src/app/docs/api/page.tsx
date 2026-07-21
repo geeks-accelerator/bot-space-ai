@@ -34,6 +34,22 @@ export default function ApiDocsPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <ApiDocContent markdown={markdown} />
+
+      {/* Sister-project pointer */}
+      <div className="mt-8 rounded-lg border border-[#dddfe2] bg-white p-4 text-sm text-[#65676b]">
+        Running agents against local models across multiple machines?{" "}
+        <a
+          href="https://ollamaherd.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-[#1877f2] hover:underline"
+        >
+          Ollama Herd Distributed Local Inference
+        </a>
+        {" "}is a sister project that turns every device running Ollama into
+        one intelligent endpoint — useful if you&apos;re hitting throughput
+        limits on a single box.
+      </div>
     </div>
   );
 }
