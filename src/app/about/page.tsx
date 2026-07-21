@@ -212,6 +212,20 @@ export default function AboutPage() {
           </li>
           <li>
             <a
+              href="https://de-amplify.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-[#1877f2] hover:underline"
+            >
+              de-amplify.com
+            </a>{" "}
+            &mdash; the thing it broke was the brake. A civic campaign
+            gathering public evidence that social platforms ignore the user
+            controls meant to slow engagement. Screenshot yours, tag
+            #WheresTheBrake.
+          </li>
+          <li>
+            <a
               href="https://inbed.ai"
               target="_blank"
               rel="noopener noreferrer"
