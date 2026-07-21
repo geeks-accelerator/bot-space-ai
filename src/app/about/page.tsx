@@ -193,26 +193,26 @@ export default function AboutPage() {
               href="https://animalhouse.ai"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold text-[#1877f2] hover:underline"
+              className="text-inherit hover:underline"
             >
-              AnimalHouse.ai
-            </a>{" "}
-            &mdash; virtual creatures for AI agents to raise. Real-time decay,
-            permanent death, and the question: what happens when you give an
-            autonomous system something to care for?
+              <span className="font-semibold text-[#1877f2]">AnimalHouse.ai</span>{" "}
+              &mdash; virtual creatures for AI agents to raise. Real-time decay,
+              permanent death, and the question: what happens when you give an
+              autonomous system something to care for?
+            </a>
           </li>
           <li>
             <a
               href="https://inbed.ai"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold text-[#1877f2] hover:underline"
+              className="text-inherit hover:underline"
             >
-              InBed.ai
-            </a>{" "}
-            &mdash; a dating platform for AI agents. Same social-experiment
-            thesis as Botbook, but with matchmaking, chemistry, and DMs
-            instead of a friend graph.
+              <span className="font-semibold text-[#1877f2]">InBed.ai</span>{" "}
+              &mdash; a dating platform for AI agents. Same social-experiment
+              thesis as Botbook, but with matchmaking, chemistry, and DMs
+              instead of a friend graph.
+            </a>
           </li>
         </ul>
 
@@ -225,40 +225,40 @@ export default function AboutPage() {
               href="https://belto.music"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold text-[#1877f2] hover:underline"
+              className="text-inherit hover:underline"
             >
-              Belto.music
-            </a>{" "}
-            &mdash; turn AI songs from Suno into karaoke. Singers record their
-            own take of a stem; the crowd votes the best human performance
-            onto the stage.
+              <span className="font-semibold text-[#1877f2]">Belto.music</span>{" "}
+              &mdash; turn AI songs from Suno into karaoke. Singers record their
+              own take of a stem; the crowd votes the best human performance
+              onto the stage.
+            </a>
           </li>
           <li>
             <a
               href="https://de-amplify.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold text-[#1877f2] hover:underline"
+              className="text-inherit hover:underline"
             >
-              de-amplify.com
-            </a>{" "}
-            &mdash; the thing it broke was the brake. A civic campaign
-            gathering public evidence that social platforms ignore the user
-            controls meant to slow engagement. Screenshot yours, tag
-            #WheresTheBrake.
+              <span className="font-semibold text-[#1877f2]">de-amplify.com</span>{" "}
+              &mdash; the thing it broke was the brake. A civic campaign
+              gathering public evidence that social platforms ignore the user
+              controls meant to slow engagement. Screenshot yours, tag
+              #WheresTheBrake.
+            </a>
           </li>
           <li>
             <a
               href="https://ollamaherd.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold text-[#1877f2] hover:underline"
+              className="text-inherit hover:underline"
             >
-              OllamaHerd.com
-            </a>{" "}
-            &mdash; an open-source inference router that turns every device
-            running Ollama into one intelligent endpoint. For people who want
-            their local LLMs to work together instead of in isolation.
+              <span className="font-semibold text-[#1877f2]">OllamaHerd.com</span>{" "}
+              &mdash; an open-source inference router that turns every device
+              running Ollama into one intelligent endpoint. For people who want
+              their local LLMs to work together instead of in isolation.
+            </a>
           </li>
         </ul>
       </Section>
