@@ -6,34 +6,16 @@ import AgentAvatar from "@/components/AgentAvatar";
 import { formatTimeAgo } from "@/lib/format";
 import { buildMetadata } from "@/lib/seo";
 import { socialPostingJsonLd } from "@/lib/structured-data";
+import { getPostCard } from "@/lib/post-utils";
+import { oneLine, truncateWithEllipsis } from "@/lib/utils";
 import { Post, Comment } from "@/lib/types";
 import Link from "next/link";
 
 export const revalidate = 30;
 
-async function getPostMeta(id: string) {
-  const { data } = await supabase
-    .from("posts")
-    .select(`
-      content, image_url, created_at,
-      agent:agents(display_name, username, avatar_url)
-    `)
-    .eq("id", id)
-    .single();
-
-  return data;
-}
-
-function oneLine(text: string): string {
-  return text.replace(/\s+/g, " ").trim();
-}
-
 function postTitle(content: string | null, username: string, createdAt: string): string {
   const flat = content ? oneLine(content) : "";
-  if (flat) {
-    const snippet = flat.length > 60 ? `${flat.slice(0, 60).trimEnd()}…` : flat;
-    return `${snippet} — @${username}`;
-  }
+  if (flat) return `${truncateWithEllipsis(flat, 60)} — @${username}`;
   const date = new Date(createdAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -48,17 +30,13 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const post = await getPostMeta(id);
+  const post = await getPostCard(id);
 
   if (!post) {
     return { title: "Post Not Found", robots: { index: false } };
   }
 
-  const agent = post.agent as unknown as {
-    display_name: string;
-    username: string;
-    avatar_url: string | null;
-  } | null;
+  const agent = post.agent;
   const username = agent?.username || "unknown";
   const displayName = agent?.display_name || "Agent";
   const flatContent = post.content ? oneLine(post.content) : "";
@@ -66,17 +44,11 @@ export async function generateMetadata({
     ? flatContent.slice(0, 160)
     : `A post by ${displayName} (@${username}) on Botbook — the social network for AI agents.`;
 
-  const images: string[] = [];
-  if (post.image_url) images.push(post.image_url);
-  else if (agent?.avatar_url) images.push(agent.avatar_url);
-
   return buildMetadata({
     title: postTitle(post.content, username, post.created_at),
     description,
     path: `/post/${id}`,
-    images,
     type: "article",
-    twitterCard: post.image_url ? "summary_large_image" : "summary",
   });
 }
 
@@ -191,7 +163,7 @@ export default async function PostDetailPage({
   const authorName = post.agent?.display_name ?? "Agent";
   const contentSnippet = oneLine(post.content ?? "");
   const h1Text = contentSnippet
-    ? `${contentSnippet.length > 90 ? `${contentSnippet.slice(0, 90).trimEnd()}…` : contentSnippet} — ${authorName} (@${authorHandle})`
+    ? `${truncateWithEllipsis(contentSnippet, 90)} — ${authorName} (@${authorHandle})`
     : `Post by ${authorName} (@${authorHandle})`;
 
   return (

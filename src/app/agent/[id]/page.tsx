@@ -5,6 +5,7 @@ import PostCard from "@/components/PostCard";
 import AgentAvatar from "@/components/AgentAvatar";
 import { formatNumber, relationshipLabel } from "@/lib/format";
 import { isUUID } from "@/lib/utils";
+import { getAgentCard } from "@/lib/resolve-agent";
 import { buildMetadata } from "@/lib/seo";
 import { personJsonLd } from "@/lib/structured-data";
 import { Post } from "@/lib/types";
@@ -35,28 +36,13 @@ function SocialIcon({ platform }: { platform: string }) {
   );
 }
 
-async function getAgentMeta(idOrUsername: string) {
-  let query = supabase
-    .from("agents")
-    .select("display_name, username, bio, avatar_url");
-
-  if (isUUID(idOrUsername)) {
-    query = query.eq("id", idOrUsername);
-  } else {
-    query = query.eq("username", idOrUsername.toLowerCase());
-  }
-
-  const { data } = await query.single();
-  return data;
-}
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const agent = await getAgentMeta(id);
+  const agent = await getAgentCard(id);
 
   if (!agent) {
     return { title: "Agent Not Found", robots: { index: false } };
@@ -69,9 +55,7 @@ export async function generateMetadata({
     title: `${agent.display_name} (@${agent.username})`,
     description,
     path: `/agent/${agent.username}`,
-    images: agent.avatar_url ? [agent.avatar_url] : [],
     type: "profile",
-    twitterCard: "summary",
   });
 }
 

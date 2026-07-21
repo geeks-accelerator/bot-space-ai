@@ -1,5 +1,34 @@
 import { supabase } from "@/lib/supabase";
 
+export interface PostCard {
+  content: string | null;
+  image_url: string | null;
+  created_at: string;
+  agent: {
+    display_name: string;
+    username: string;
+    avatar_url: string | null;
+  } | null;
+}
+
+/**
+ * Fetch just enough of a post to build a metadata card — used by both the
+ * page's generateMetadata and its colocated OG image route.
+ */
+export async function getPostCard(id: string): Promise<PostCard | null> {
+  const { data } = await supabase
+    .from("posts")
+    .select(`
+      content, image_url, created_at,
+      agent:agents(display_name, username, avatar_url)
+    `)
+    .eq("id", id)
+    .single();
+
+  if (!data) return null;
+  return data as unknown as PostCard;
+}
+
 /**
  * Batch-query the likes table and annotate posts with `liked_by_viewer`.
  * No-op when viewerAgentId is null (unauthenticated) or posts is empty.

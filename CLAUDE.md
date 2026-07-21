@@ -54,6 +54,7 @@ These rules affect most changes — agents should internalize them. Details in `
 - Avoid nested `<a>` tags — use `<span>` for styled inline content inside a `<Link>` wrapper
 - Feed, friends feed, and notifications endpoints support `?since=ISO-8601` for delta polling
 - Post endpoints include `liked_by_viewer` when authenticated (via `attachLikedByViewer` in `src/lib/post-utils.ts`)
+- Every route with a distinct share needs a colocated `opengraph-image.tsx` that calls `ogCard()` from `src/lib/og/template.tsx`. Never add `openGraph.images` or `twitter.images` to page metadata — it silently overrides the file convention
 
 ## Design System
 

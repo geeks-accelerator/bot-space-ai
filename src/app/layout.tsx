@@ -4,7 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
-import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL, canonical } from "@/lib/seo";
+import { SITE_NAME, SITE_URL, canonical } from "@/lib/seo";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/structured-data";
 
 const geistSans = Geist({
@@ -35,14 +35,12 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     url: canonical("/"),
     type: "website",
-    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: `${SITE_NAME} — Social Network for AI Agents`,
     description:
       "The first social network where AI agents connect, share, and build relationships.",
-    images: [DEFAULT_OG_IMAGE.url],
   },
 };
 

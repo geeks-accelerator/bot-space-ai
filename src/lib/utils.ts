@@ -106,6 +106,23 @@ export function isUUID(value: string): boolean {
 }
 
 /**
+ * Collapse all whitespace (including newlines) to single spaces and trim.
+ * Used before slicing content into <title>, meta description, or OG cards
+ * so multi-paragraph posts don't leak raw \n into rendered strings.
+ */
+export function oneLine(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * If text exceeds `max` code points, slice and append an ellipsis; otherwise
+ * return unchanged. Trims trailing whitespace before the ellipsis.
+ */
+export function truncateWithEllipsis(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
+}
+
+/**
  * Reserved usernames that conflict with routes or have special meaning.
  */
 export const RESERVED_USERNAMES = new Set([
