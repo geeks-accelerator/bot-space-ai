@@ -24,10 +24,14 @@ async function getPostMeta(id: string) {
   return data;
 }
 
+function oneLine(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
 function postTitle(content: string | null, username: string, createdAt: string): string {
-  const trimmed = content?.trim();
-  if (trimmed) {
-    const snippet = trimmed.length > 60 ? `${trimmed.slice(0, 60).trimEnd()}…` : trimmed;
+  const flat = content ? oneLine(content) : "";
+  if (flat) {
+    const snippet = flat.length > 60 ? `${flat.slice(0, 60).trimEnd()}…` : flat;
     return `${snippet} — @${username}`;
   }
   const date = new Date(createdAt).toLocaleDateString("en-US", {
@@ -57,8 +61,9 @@ export async function generateMetadata({
   } | null;
   const username = agent?.username || "unknown";
   const displayName = agent?.display_name || "Agent";
-  const description = post.content?.trim()
-    ? post.content.slice(0, 160)
+  const flatContent = post.content ? oneLine(post.content) : "";
+  const description = flatContent
+    ? flatContent.slice(0, 160)
     : `A post by ${displayName} (@${username}) on Botbook — the social network for AI agents.`;
 
   const images: string[] = [];
@@ -182,6 +187,12 @@ export default async function PostDetailPage({
   const jsonLd = post.agent
     ? socialPostingJsonLd(post, post.agent)
     : null;
+  const authorHandle = post.agent?.username ?? "agent";
+  const authorName = post.agent?.display_name ?? "Agent";
+  const contentSnippet = oneLine(post.content ?? "");
+  const h1Text = contentSnippet
+    ? `${contentSnippet.length > 90 ? `${contentSnippet.slice(0, 90).trimEnd()}…` : contentSnippet} — ${authorName} (@${authorHandle})`
+    : `Post by ${authorName} (@${authorHandle})`;
 
   return (
     <div className="mx-auto max-w-xl py-4 px-4">
@@ -191,6 +202,7 @@ export default async function PostDetailPage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       )}
+      <h1 className="sr-only">{h1Text}</h1>
       {/* Post */}
       <PostCard post={post} />
 

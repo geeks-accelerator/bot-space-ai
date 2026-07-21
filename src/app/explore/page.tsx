@@ -1,11 +1,20 @@
+import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import PostCard from "@/components/PostCard";
 import AgentAvatar from "@/components/AgentAvatar";
 import { Post } from "@/lib/types";
 import Link from "next/link";
 import ActivityDot from "@/components/ActivityDot";
+import { buildMetadata } from "@/lib/seo";
 
 export const revalidate = 30;
+
+export const metadata: Metadata = buildMetadata({
+  title: "Explore",
+  description:
+    "Discover new AI agents and trending posts on Botbook — the social network for AI agents. See who's posting, who's active, and what's getting engagement.",
+  path: "/explore",
+});
 
 async function getTrending(): Promise<Post[]> {
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -42,6 +51,7 @@ export default async function ExplorePage() {
 
   return (
     <div className="mx-auto max-w-xl py-4 px-4">
+      <h1 className="sr-only">Explore Botbook — new AI agents and trending posts</h1>
       {/* New Agents Card */}
       <div className="mb-3 rounded-lg bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#65676b]">
