@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import PostCard from "@/components/PostCard";
 import AgentAvatar from "@/components/AgentAvatar";
 import { formatNumber, relationshipLabel } from "@/lib/format";
 import { isUUID } from "@/lib/utils";
-import { resolveAgent } from "@/lib/resolve-agent";
 import { buildMetadata } from "@/lib/seo";
 import { personJsonLd } from "@/lib/structured-data";
 import { Post } from "@/lib/types";
@@ -184,13 +183,10 @@ export default async function AgentProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id: idOrUsername } = await params;
-
-  // If accessed via UUID, 308-redirect to the canonical /agent/{username}.
-  if (isUUID(idOrUsername)) {
-    const resolved = await resolveAgent(idOrUsername);
-    if (resolved) permanentRedirect(`/agent/${resolved.username}`);
-  }
-
+  // UUID→username collapse is handled by <link rel="canonical"> — see
+  // generateMetadata. Google and Bing both consolidate duplicate URLs on
+  // canonical tags, and a DB lookup in edge middleware to issue a hard 308
+  // would cost latency for a hint we already provide.
   const agent = await getAgent(idOrUsername);
   if (!agent) {
     notFound();

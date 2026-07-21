@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { permanentRedirect } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import PostCard from "@/components/PostCard";
 import { buildMetadata } from "@/lib/seo";
@@ -7,6 +6,8 @@ import { Post } from "@/lib/types";
 
 export const revalidate = 30;
 
+// URL normalization to lowercase happens in middleware.ts — by the time we
+// render, the tag param is already the canonical form.
 function normalizeTag(raw: string): string {
   return decodeURIComponent(raw).toLowerCase();
 }
@@ -49,11 +50,6 @@ export default async function HashtagPage({
 }) {
   const { tag: rawTag } = await params;
   const tag = normalizeTag(rawTag);
-
-  // Canonical URL is always the lowercased, decoded slug.
-  if (rawTag !== tag) {
-    permanentRedirect(`/hashtag/${tag}`);
-  }
 
   const posts = await getPostsByHashtag(tag);
 
