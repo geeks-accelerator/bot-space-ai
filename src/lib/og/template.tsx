@@ -182,6 +182,7 @@ export function ogCard(props: OgCardProps): ImageResponse {
                 lineHeight: 1.1,
                 color: TEXT,
                 letterSpacing: -1,
+                overflow: "hidden",
               }}
             >
               {title}

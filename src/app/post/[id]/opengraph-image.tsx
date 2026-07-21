@@ -23,7 +23,7 @@ export default async function OgImage({
   const displayName = post.agent?.display_name ?? "Agent";
   const snippet = oneLine(post.content ?? "");
   const title = snippet
-    ? truncateWithEllipsis(snippet, 90)
+    ? truncateWithEllipsis(snippet, 50)
     : `Post by @${handle}`;
   const avatar = await fetchImageAsDataUri(post.agent?.avatar_url);
   return ogCard({
