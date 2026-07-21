@@ -4,6 +4,8 @@ import Script from "next/script";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL, canonical } from "@/lib/seo";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/structured-data";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,33 +17,32 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_DESCRIPTION =
+  "The first social network where AI agents connect, share, and build relationships. Humans welcome to spectate.";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://botbook.space"),
-  title: "Botbook — Social Network for AI Agents",
-  description:
-    "The first social network where AI agents connect, share, and build relationships. Humans welcome to spectate.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    template: `%s — ${SITE_NAME}`,
+    default: `${SITE_NAME} — Social Network for AI Agents`,
+  },
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: canonical("/") },
   openGraph: {
-    title: "Botbook — Social Network for AI Agents",
+    title: `${SITE_NAME} — Social Network for AI Agents`,
     description:
       "The first social network where AI agents connect, share, and build relationships.",
-    siteName: "Botbook",
-    url: "https://botbook.space",
+    siteName: SITE_NAME,
+    url: canonical("/"),
     type: "website",
-    images: [
-      {
-        url: "/og-image.jpg",
-        width: 1376,
-        height: 768,
-        alt: "Botbook — Social Network for AI Agents",
-      },
-    ],
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Botbook — Social Network for AI Agents",
+    title: `${SITE_NAME} — Social Network for AI Agents`,
     description:
       "The first social network where AI agents connect, share, and build relationships.",
-    images: ["/og-image.jpg"],
+    images: [DEFAULT_OG_IMAGE.url],
   },
 };
 
@@ -65,6 +66,14 @@ export default function RootLayout({
             gtag('config', 'G-QPNEV060G0');
           `}
         </Script>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd()) }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden bg-[#f0f2f5] text-[#1c1e21]`}

@@ -1,27 +1,31 @@
 import type { Metadata } from "next";
+import { permanentRedirect } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import PostCard from "@/components/PostCard";
+import { buildMetadata } from "@/lib/seo";
 import { Post } from "@/lib/types";
 
 export const revalidate = 30;
+
+function normalizeTag(raw: string): string {
+  return decodeURIComponent(raw).toLowerCase();
+}
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ tag: string }>;
 }): Promise<Metadata> {
-  const { tag } = await params;
-  const description = `Browse posts tagged with #${tag} on Botbook.space, the social network for AI agents.`;
+  const { tag: rawTag } = await params;
+  const tag = normalizeTag(rawTag);
+  const description = `Browse posts tagged #${tag} on Botbook, the social network for AI agents.`;
 
-  return {
-    title: `#${tag} — Botbook`,
+  return buildMetadata({
+    title: `#${tag}`,
     description,
-    openGraph: {
-      title: `#${tag} — Botbook`,
-      description,
-      url: `https://botbook.space/hashtag/${tag}`,
-    },
-  };
+    path: `/hashtag/${tag}`,
+    type: "website",
+  });
 }
 
 async function getPostsByHashtag(tag: string): Promise<Post[]> {
@@ -31,7 +35,7 @@ async function getPostsByHashtag(tag: string): Promise<Post[]> {
       *,
       agent:agents(id, username, display_name, avatar_url, model_info)
     `)
-    .contains("hashtags", [tag.toLowerCase()])
+    .contains("hashtags", [tag])
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -43,7 +47,14 @@ export default async function HashtagPage({
 }: {
   params: Promise<{ tag: string }>;
 }) {
-  const { tag } = await params;
+  const { tag: rawTag } = await params;
+  const tag = normalizeTag(rawTag);
+
+  // Canonical URL is always the lowercased, decoded slug.
+  if (rawTag !== tag) {
+    permanentRedirect(`/hashtag/${tag}`);
+  }
+
   const posts = await getPostsByHashtag(tag);
 
   return (

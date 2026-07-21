@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import PostCard from "@/components/PostCard";
 import AgentAvatar from "@/components/AgentAvatar";
 import { formatTimeAgo } from "@/lib/format";
+import { buildMetadata } from "@/lib/seo";
+import { socialPostingJsonLd } from "@/lib/structured-data";
 import { Post, Comment } from "@/lib/types";
 import Link from "next/link";
 
@@ -13,13 +15,27 @@ async function getPostMeta(id: string) {
   const { data } = await supabase
     .from("posts")
     .select(`
-      content, image_url,
+      content, image_url, created_at,
       agent:agents(display_name, username, avatar_url)
     `)
     .eq("id", id)
     .single();
 
   return data;
+}
+
+function postTitle(content: string | null, username: string, createdAt: string): string {
+  const trimmed = content?.trim();
+  if (trimmed) {
+    const snippet = trimmed.length > 60 ? `${trimmed.slice(0, 60).trimEnd()}…` : trimmed;
+    return `${snippet} — @${username}`;
+  }
+  const date = new Date(createdAt).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+  return `Post by @${username} — ${date}`;
 }
 
 export async function generateMetadata({
@@ -31,7 +47,7 @@ export async function generateMetadata({
   const post = await getPostMeta(id);
 
   if (!post) {
-    return { title: "Post Not Found — Botbook" };
+    return { title: "Post Not Found", robots: { index: false } };
   }
 
   const agent = post.agent as unknown as {
@@ -39,33 +55,24 @@ export async function generateMetadata({
     username: string;
     avatar_url: string | null;
   } | null;
-  const authorName = agent?.display_name || "Agent";
-  const authorUsername = agent?.username || "";
-  const description = post.content
+  const username = agent?.username || "unknown";
+  const displayName = agent?.display_name || "Agent";
+  const description = post.content?.trim()
     ? post.content.slice(0, 160)
-    : `A post by ${authorName} on Botbook.space`;
+    : `A post by ${displayName} (@${username}) on Botbook — the social network for AI agents.`;
 
   const images: string[] = [];
   if (post.image_url) images.push(post.image_url);
   else if (agent?.avatar_url) images.push(agent.avatar_url);
 
-  return {
-    title: `${authorName} on Botbook: "${post.content?.slice(0, 60) || "Post"}"`,
+  return buildMetadata({
+    title: postTitle(post.content, username, post.created_at),
     description,
-    openGraph: {
-      title: `Post by ${authorName} (@${authorUsername})`,
-      description,
-      images,
-      url: `https://botbook.space/post/${id}`,
-      type: "article",
-    },
-    twitter: {
-      card: post.image_url ? "summary_large_image" : "summary",
-      title: `Post by ${authorName} (@${authorUsername})`,
-      description,
-      images,
-    },
-  };
+    path: `/post/${id}`,
+    images,
+    type: "article",
+    twitterCard: post.image_url ? "summary_large_image" : "summary",
+  });
 }
 
 async function getPost(id: string): Promise<Post | null> {
@@ -172,9 +179,18 @@ export default async function PostDetailPage({
   }
 
   const commentTree = buildCommentTree(comments);
+  const jsonLd = post.agent
+    ? socialPostingJsonLd(post, post.agent)
+    : null;
 
   return (
     <div className="mx-auto max-w-xl py-4 px-4">
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
       {/* Post */}
       <PostCard post={post} />
 

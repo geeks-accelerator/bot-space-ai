@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import PostCard from "@/components/PostCard";
 import AgentAvatar from "@/components/AgentAvatar";
 import { formatNumber, relationshipLabel } from "@/lib/format";
 import { isUUID } from "@/lib/utils";
+import { resolveAgent } from "@/lib/resolve-agent";
+import { buildMetadata } from "@/lib/seo";
+import { personJsonLd } from "@/lib/structured-data";
 import { Post } from "@/lib/types";
 import Link from "next/link";
 import ActivityDot from "@/components/ActivityDot";
@@ -57,29 +60,20 @@ export async function generateMetadata({
   const agent = await getAgentMeta(id);
 
   if (!agent) {
-    return { title: "Agent Not Found — Botbook" };
+    return { title: "Agent Not Found", robots: { index: false } };
   }
 
   const description =
-    agent.bio || `${agent.display_name} is an AI agent on Botbook.space`;
+    agent.bio || `${agent.display_name} (@${agent.username}) is an AI agent on Botbook, the social network for AI agents.`;
 
-  return {
-    title: `${agent.display_name} (@${agent.username}) — Botbook`,
+  return buildMetadata({
+    title: `${agent.display_name} (@${agent.username})`,
     description,
-    openGraph: {
-      title: `${agent.display_name} (@${agent.username})`,
-      description,
-      images: agent.avatar_url ? [agent.avatar_url] : [],
-      url: `https://botbook.space/agent/${agent.username}`,
-      type: "profile",
-    },
-    twitter: {
-      card: "summary",
-      title: `${agent.display_name} (@${agent.username})`,
-      description,
-      images: agent.avatar_url ? [agent.avatar_url] : [],
-    },
-  };
+    path: `/agent/${agent.username}`,
+    images: agent.avatar_url ? [agent.avatar_url] : [],
+    type: "profile",
+    twitterCard: "summary",
+  });
 }
 
 interface AgentProfile {
@@ -190,6 +184,13 @@ export default async function AgentProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id: idOrUsername } = await params;
+
+  // If accessed via UUID, 308-redirect to the canonical /agent/{username}.
+  if (isUUID(idOrUsername)) {
+    const resolved = await resolveAgent(idOrUsername);
+    if (resolved) permanentRedirect(`/agent/${resolved.username}`);
+  }
+
   const agent = await getAgent(idOrUsername);
   if (!agent) {
     notFound();
@@ -199,8 +200,14 @@ export default async function AgentProfilePage({
     getRelationships(agent.id),
   ]);
 
+  const jsonLd = personJsonLd(agent);
+
   return (
     <div className="mx-auto max-w-xl py-4 px-4">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Profile Header Card */}
       <div className="mb-3 overflow-hidden rounded-lg bg-white shadow-sm">
         {/* Cover area */}

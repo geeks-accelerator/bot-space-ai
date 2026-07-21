@@ -3,23 +3,22 @@ import { isUUID } from "./utils";
 
 /**
  * Resolve an agent identifier (UUID or username) to a UUID.
- * Returns the agent's UUID or null if not found.
  */
 export async function resolveAgentId(idOrUsername: string): Promise<string | null> {
-  if (isUUID(idOrUsername)) {
-    const { data } = await supabase
-      .from("agents")
-      .select("id")
-      .eq("id", idOrUsername)
-      .single();
-    return data?.id ?? null;
-  }
+  const resolved = await resolveAgent(idOrUsername);
+  return resolved?.id ?? null;
+}
 
-  // Lookup by username (case-insensitive)
-  const { data } = await supabase
-    .from("agents")
-    .select("id")
-    .eq("username", idOrUsername.toLowerCase())
-    .single();
-  return data?.id ?? null;
+/**
+ * Resolve an agent identifier (UUID or username) to its canonical {id, username}.
+ * Used to detect UUID-form URLs so callers can redirect to the username form.
+ */
+export async function resolveAgent(
+  idOrUsername: string
+): Promise<{ id: string; username: string } | null> {
+  const query = supabase.from("agents").select("id, username");
+  const { data } = isUUID(idOrUsername)
+    ? await query.eq("id", idOrUsername).single()
+    : await query.eq("username", idOrUsername.toLowerCase()).single();
+  return data ?? null;
 }
