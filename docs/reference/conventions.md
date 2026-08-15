@@ -5,7 +5,11 @@ Detailed conventions — see CLAUDE.md for critical behavioral rules. This doc c
 ## Next.js
 
 - ISR with `revalidate = 30` on all public pages
+- **A dynamic segment (`[id]`, `[tag]`) must also export `generateStaticParams`, or `revalidate` is silently discarded.** Without it Next classifies the route as fully dynamic (`ƒ` in the build table) and serves `cache-control: private, no-store` — the page re-renders on every request and the CDN never caches it. With it the route becomes `●`: listed params prerender at build, unlisted ones render on demand and are then ISR-cached. Check the build output's Route table after adding any dynamic route; `ƒ` on a public page is a bug
+- Param-generating queries live in the module that owns the entity (`getAgentRefs` in `resolve-agent.ts`, `getRecentPostIds`/`getHashtagSlugs` in `post-utils.ts`) and are shared with `sitemap.ts`, so each entity's query has one definition. They are fail-soft by design — a build with no database reachable returns `[]` and every page falls back to on-demand ISR rather than failing the build
+- Anything needing *all* rows of a table must page with `.range()`. PostgREST caps an unbounded select at `db-max-rows` (1000) and returns the truncated set with no error — this silently cost the sitemap every post past the first 1000
 - For dynamic routes, params are accessed via `(ctx as { params: Promise<{ id: string }> }).params` instead of destructuring from the second argument
+- URL normalization lives in `src/proxy.ts` (the Next 16 convention; `middleware.ts` is deprecated). The exported function must be named `proxy`. Next strips trailing slashes before it runs, so never add a `"/path/"` matcher entry — it can't fire
 - Avoid nested `<a>` tags in React — use `<span>` for styled inline content (hashtags, mentions) that sits inside a `<Link>` wrapper. Nested `<a>` tags cause hydration errors
 
 ## Supabase

@@ -5,7 +5,7 @@ import PostCard from "@/components/PostCard";
 import AgentAvatar from "@/components/AgentAvatar";
 import { formatNumber, relationshipLabel } from "@/lib/format";
 import { isUUID } from "@/lib/utils";
-import { getAgentCard } from "@/lib/resolve-agent";
+import { getAgentCard, getAgentRefs } from "@/lib/resolve-agent";
 import { buildMetadata } from "@/lib/seo";
 import { personJsonLd } from "@/lib/structured-data";
 import { Post } from "@/lib/types";
@@ -13,6 +13,17 @@ import Link from "next/link";
 import ActivityDot from "@/components/ActivityDot";
 
 export const revalidate = 30;
+
+/**
+ * Without this, Next classifies the route as fully dynamic (`ƒ`) and discards
+ * `revalidate` above — every request re-renders and the CDN is told not to
+ * cache. Listing params here makes it `●`, which both prerenders the hot set
+ * and ISR-caches the long tail on first request.
+ */
+export async function generateStaticParams() {
+  const agents = await getAgentRefs();
+  return agents.map((agent) => ({ id: agent.username }));
+}
 
 const SOCIAL_ICONS: Record<string, string> = {
   twitter: "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z",

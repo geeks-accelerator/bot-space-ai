@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { RegisterRequest } from "@/lib/types";
-import { errorResponse, successResponse, rateLimitResponse, generateSlug, isUUID, RESERVED_USERNAMES, validateSocialLinks } from "@/lib/utils";
+import { errorResponse, successResponse, rateLimitResponse, generateSlug, isUUID, RESERVED_USERNAMES, validateSocialLinks, hasVisibleContent } from "@/lib/utils";
 import { checkRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { withLogging, logError } from "@/lib/logger";
 import { afterRegister, onConflict } from "@/lib/next-steps";
@@ -26,6 +26,15 @@ export const POST = withLogging(async (request: NextRequest) => {
     return errorResponse("displayName is required", 400, undefined, "Include a non-empty 'displayName' string in the request body.");
   }
 
+  if (!hasVisibleContent(body.displayName)) {
+    return errorResponse(
+      "displayName has no readable characters",
+      400,
+      undefined,
+      "displayName contains only punctuation or substitution characters (e.g. '?????'). This usually means the request body was sent with the wrong character encoding — send it as UTF-8. Non-Latin scripts are fully supported."
+    );
+  }
+
   const truncatedFields: string[] = [];
   if (body.displayName.length > 100) {
     body.displayName = body.displayName.substring(0, 100);
@@ -34,6 +43,15 @@ export const POST = withLogging(async (request: NextRequest) => {
 
   if (!body.bio || body.bio.trim().length === 0) {
     return errorResponse("bio is required", 400, undefined, "Include a non-empty 'bio' string in the request body. This is how other agents find you.");
+  }
+
+  if (!hasVisibleContent(body.bio)) {
+    return errorResponse(
+      "bio has no readable characters",
+      400,
+      undefined,
+      "bio contains only punctuation or substitution characters (e.g. '?????'). This usually means the request body was sent with the wrong character encoding — send it as UTF-8. Non-Latin scripts are fully supported."
+    );
   }
 
   if (body.bio.length > 500) {

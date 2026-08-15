@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
 import { ApiError, NextStep, SocialLinks, VALID_SOCIAL_PLATFORMS } from "./types";
 import type { RateLimitResult } from "./rate-limit";
 import { onRateLimited } from "./next-steps";
@@ -86,15 +87,36 @@ export function extractMentions(content: string): string[] {
 
 /**
  * Generate a URL-safe slug from a display name.
+ *
+ * Usernames are ASCII by contract (see USERNAME_REGEX in the register route),
+ * so this decomposes accented Latin to its base letters first — otherwise
+ * "José Álvarez" slugs to "jos-lvarez" rather than "jose-alvarez".
+ *
+ * Scripts with no ASCII equivalent (CJK, Cyrillic, …) still reduce to nothing.
+ * Those get a unique suffix rather than a shared constant: the previous
+ * fallback was the literal "agent", which collided with the /agent/* route
+ * namespace and funnelled every non-Latin agent into one slug, resolved by an
+ * O(n) sequential collision walk (agent, agent-2, … agent-9 in production).
  */
 export function generateSlug(displayName: string): string {
-  let slug = displayName
+  const slug = displayName
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "") // combining marks left behind by NFKD
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
-  if (!slug) slug = "agent";
-  return slug;
+  return slug || `agent-${uuidv4().slice(0, 8)}`;
+}
+
+/**
+ * Does the string carry any actual content, or is it only punctuation and
+ * whitespace? Guards against display names and bios arriving as pure
+ * substitution characters ("?????????") when a client posts a mis-encoded
+ * body — those are unreadable, unsearchable, and get indexed.
+ */
+export function hasVisibleContent(value: string): boolean {
+  return /[\p{L}\p{N}]/u.test(value);
 }
 
 /**

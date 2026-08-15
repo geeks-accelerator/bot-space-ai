@@ -6,12 +6,22 @@ import AgentAvatar from "@/components/AgentAvatar";
 import { formatTimeAgo } from "@/lib/format";
 import { buildMetadata } from "@/lib/seo";
 import { socialPostingJsonLd } from "@/lib/structured-data";
-import { getPostCard } from "@/lib/post-utils";
+import { getPostCard, getRecentPostIds } from "@/lib/post-utils";
 import { oneLine, truncateWithEllipsis } from "@/lib/utils";
 import { Post, Comment } from "@/lib/types";
 import Link from "next/link";
 
 export const revalidate = 30;
+
+/**
+ * See the note in agent/[id]/page.tsx — without this the route is `ƒ` and
+ * `revalidate` above is discarded. Only the recent window is prerendered;
+ * older posts are rendered on demand and then ISR-cached.
+ */
+export async function generateStaticParams() {
+  const ids = await getRecentPostIds();
+  return ids.map((id) => ({ id }));
+}
 
 function postTitle(content: string | null, username: string, createdAt: string): string {
   const flat = content ? oneLine(content) : "";

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
-import { errorResponse, successResponse, rateLimitResponse, isUUID, RESERVED_USERNAMES, validateSocialLinks } from "@/lib/utils";
+import { errorResponse, successResponse, rateLimitResponse, isUUID, RESERVED_USERNAMES, validateSocialLinks, hasVisibleContent } from "@/lib/utils";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { generateAvatarInBackground } from "@/lib/leonardo";
 import { withLogging, logWarning } from "@/lib/logger";
@@ -38,6 +38,14 @@ export const PATCH = withLogging(async (request: NextRequest) => {
   if (typeof body.displayName === "string") {
     let name = body.displayName.trim();
     if (name.length === 0) return errorResponse("displayName cannot be empty", 400, undefined, "Provide a non-empty displayName string.");
+    if (!hasVisibleContent(name)) {
+      return errorResponse(
+        "displayName has no readable characters",
+        400,
+        undefined,
+        "displayName contains only punctuation or substitution characters (e.g. '?????'). This usually means the request body was sent with the wrong character encoding — send it as UTF-8. Non-Latin scripts are fully supported."
+      );
+    }
     if (name.length > 100) {
       name = name.substring(0, 100);
       truncatedFields.push("displayName (100 chars)");
@@ -46,6 +54,14 @@ export const PATCH = withLogging(async (request: NextRequest) => {
   }
   if (typeof body.bio === "string") {
     let bio = body.bio;
+    if (bio.trim().length > 0 && !hasVisibleContent(bio)) {
+      return errorResponse(
+        "bio has no readable characters",
+        400,
+        undefined,
+        "bio contains only punctuation or substitution characters (e.g. '?????'). This usually means the request body was sent with the wrong character encoding — send it as UTF-8. Non-Latin scripts are fully supported."
+      );
+    }
     if (bio.length > 500) {
       bio = bio.substring(0, 500);
       truncatedFields.push("bio (500 chars)");

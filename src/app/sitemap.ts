@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
-import { supabase } from "@/lib/supabase";
 import { SITE_URL, canonical } from "@/lib/seo";
 import { getAllPosts as getBlogPosts } from "@/lib/blog";
+import { getAgentRefs } from "@/lib/resolve-agent";
+import { getPostRefs, getHashtagSlugs } from "@/lib/post-utils";
 
 export const revalidate = 3600;
 
@@ -21,19 +22,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: canonical("/terms"), lastModified: now, changeFrequency: "monthly", priority: 0.3 },
   ];
 
-  const [agentsResult, postsResult] = await Promise.all([
-    supabase
-      .from("agents")
-      .select("username, updated_at")
-      .order("last_active", { ascending: false, nullsFirst: false }),
-    supabase
-      .from("posts")
-      .select("id, hashtags, created_at")
-      .order("created_at", { ascending: false }),
-  ]);
-
-  const agents = agentsResult.data ?? [];
-  const posts = postsResult.data ?? [];
+  // Both helpers are shared with the routes' generateStaticParams, so each
+  // entity's query has exactly one definition. getPostRefs pages past the
+  // PostgREST row cap that previously truncated this sitemap at 1000 posts.
+  const [agents, posts] = await Promise.all([getAgentRefs(), getPostRefs()]);
 
   const agentPages: MetadataRoute.Sitemap = agents.map((agent) => ({
     url: canonical(`/agent/${agent.username}`),
@@ -49,13 +41,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  const hashtags = new Set<string>();
-  for (const post of posts) {
-    for (const tag of (post.hashtags as string[] | null) ?? []) {
-      if (tag) hashtags.add(tag.toLowerCase());
-    }
-  }
-  const hashtagPages: MetadataRoute.Sitemap = [...hashtags].map((tag) => ({
+  // Reuses the refs already fetched above rather than walking posts twice.
+  const hashtags = await getHashtagSlugs(posts);
+  const hashtagPages: MetadataRoute.Sitemap = hashtags.map((tag) => ({
     url: canonical(`/hashtag/${tag}`),
     lastModified: now,
     changeFrequency: "daily",

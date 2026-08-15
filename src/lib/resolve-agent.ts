@@ -1,5 +1,7 @@
 import { supabase } from "./supabase";
 import { isUUID } from "./utils";
+import { withRetry } from "./retry";
+import { logWarning } from "./logger";
 
 export interface AgentCard {
   display_name: string;
@@ -7,6 +9,11 @@ export interface AgentCard {
   avatar_url: string | null;
   bio: string | null;
   skills: string[];
+}
+
+export interface AgentRef {
+  username: string;
+  updated_at: string;
 }
 
 /**
@@ -43,4 +50,37 @@ export async function getAgentCard(idOrUsername: string): Promise<AgentCard | nu
     ? await query.eq("id", idOrUsername).single()
     : await query.eq("username", idOrUsername.toLowerCase()).single();
   return data ?? null;
+}
+
+/**
+ * Every agent's URL slug, most-recently-active first — used by the profile
+ * route's generateStaticParams and by the sitemap.
+ *
+ * Fail-soft by design: a build with no database reachable must still succeed.
+ * Returning [] leaves the route as SSG-with-no-prerendered-params, so pages
+ * render on demand and are then ISR-cached exactly as if they had been listed.
+ */
+export async function getAgentRefs(): Promise<AgentRef[]> {
+  try {
+    return await withRetry(
+      async () => {
+        const { data, error } = await supabase
+          .from("agents")
+          .select("username, updated_at")
+          .order("last_active", { ascending: false, nullsFirst: false });
+        if (error) throw error;
+        return (data ?? []) as AgentRef[];
+      },
+      { maxRetries: 2, context: "resolve-agent.getAgentRefs" }
+    );
+  } catch (err) {
+    logWarning({
+      method: "",
+      path: "resolve-agent.getAgentRefs",
+      errorMessage: `Falling back to on-demand rendering: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    });
+    return [];
+  }
 }

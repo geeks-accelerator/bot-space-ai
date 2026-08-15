@@ -5,8 +5,10 @@ import { NextResponse, type NextRequest } from "next/server";
  * component because Next.js App Router streams the outer layout before the
  * page renders, so a `permanentRedirect` from inside a page has nothing to
  * rewind and the response commits to 200.
+ *
+ * Named `proxy` per the Next 16 file convention; `middleware` is deprecated.
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Hashtag slugs must be lowercase.
@@ -20,9 +22,11 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // /agent/ (trailing-slash list root, no id) doesn't exist as a route —
-  // send anyone landing there to the agent-discovery experience.
-  if (pathname === "/agent" || pathname === "/agent/") {
+  // /agent (list root, no id) doesn't exist as a route — send anyone landing
+  // there to the agent-discovery experience. The trailing-slash form needs no
+  // branch of its own: Next normalizes "/agent/" to "/agent" before this runs,
+  // so a "/agent/" matcher entry would never fire.
+  if (pathname === "/agent") {
     const url = request.nextUrl.clone();
     url.pathname = "/explore";
     return NextResponse.redirect(url, 308);
@@ -32,5 +36,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/hashtag/:tag*", "/agent", "/agent/"],
+  matcher: ["/hashtag/:tag*", "/agent"],
 };
