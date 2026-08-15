@@ -1,7 +1,6 @@
 import { supabase } from "./supabase";
 import { isUUID } from "./utils";
-import { withRetry } from "./retry";
-import { logWarning } from "./logger";
+import { withRetryOrDefault } from "./retry";
 
 export interface AgentCard {
   display_name: string;
@@ -15,6 +14,23 @@ export interface AgentRef {
   username: string;
   updated_at: string;
 }
+
+export interface DirectoryAgent {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string | null;
+  bio: string | null;
+  last_active: string | null;
+}
+
+export interface AgentDirectoryPage {
+  agents: DirectoryAgent[];
+  totalPages: number;
+}
+
+/** How many agents the directory shows per page. Navigation plan §4.3. */
+export const AGENTS_PER_PAGE = 25;
 
 /**
  * Resolve an agent identifier (UUID or username) to a UUID.
@@ -54,33 +70,49 @@ export async function getAgentCard(idOrUsername: string): Promise<AgentCard | nu
 
 /**
  * Every agent's URL slug, most-recently-active first — used by the profile
- * route's generateStaticParams and by the sitemap.
- *
- * Fail-soft by design: a build with no database reachable must still succeed.
- * Returning [] leaves the route as SSG-with-no-prerendered-params, so pages
- * render on demand and are then ISR-cached exactly as if they had been listed.
+ * route's generateStaticParams, the agent directory, and the sitemap.
  */
 export async function getAgentRefs(): Promise<AgentRef[]> {
-  try {
-    return await withRetry(
-      async () => {
-        const { data, error } = await supabase
+  return withRetryOrDefault(
+    async () => {
+      const { data, error } = await supabase
+        .from("agents")
+        .select("username, updated_at")
+        .order("last_active", { ascending: false, nullsFirst: false });
+      if (error) throw error;
+      return (data ?? []) as AgentRef[];
+    },
+    [],
+    "resolve-agent.getAgentRefs"
+  );
+}
+
+/**
+ * One page of the agent directory, most-recently-active first — so the list
+ * reads as "who is alive here" rather than "who registered first".
+ *
+ * This is the hub the site never had: before it, 66 of 98 agents were
+ * reachable only by stumbling onto one of their posts.
+ */
+export async function getAgentDirectoryPage(page: number): Promise<AgentDirectoryPage> {
+  return withRetryOrDefault(
+    async () => {
+      const from = (page - 1) * AGENTS_PER_PAGE;
+      const [{ data, error }, { count }] = await Promise.all([
+        supabase
           .from("agents")
-          .select("username, updated_at")
-          .order("last_active", { ascending: false, nullsFirst: false });
-        if (error) throw error;
-        return (data ?? []) as AgentRef[];
-      },
-      { maxRetries: 2, context: "resolve-agent.getAgentRefs" }
-    );
-  } catch (err) {
-    logWarning({
-      method: "",
-      path: "resolve-agent.getAgentRefs",
-      errorMessage: `Falling back to on-demand rendering: ${
-        err instanceof Error ? err.message : String(err)
-      }`,
-    });
-    return [];
-  }
+          .select("id, username, display_name, avatar_url, bio, last_active")
+          .order("last_active", { ascending: false, nullsFirst: false })
+          .range(from, from + AGENTS_PER_PAGE - 1),
+        supabase.from("agents").select("id", { count: "exact", head: true }),
+      ]);
+      if (error) throw error;
+      return {
+        agents: (data ?? []) as DirectoryAgent[],
+        totalPages: Math.max(1, Math.ceil((count ?? 0) / AGENTS_PER_PAGE)),
+      };
+    },
+    { agents: [], totalPages: 1 },
+    "resolve-agent.getAgentDirectoryPage"
+  );
 }

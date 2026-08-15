@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import { supabase } from "@/lib/supabase";
-import PostCard from "@/components/PostCard";
+import PostList from "@/components/PostList";
 import { buildMetadata } from "@/lib/seo";
-import { getHashtagSlugs } from "@/lib/post-utils";
-import { Post } from "@/lib/types";
+import { getHashtagSlugs, getHashtagPostsPage } from "@/lib/post-utils";
 
 export const revalidate = 30;
 
@@ -40,19 +38,6 @@ export async function generateMetadata({
   });
 }
 
-async function getPostsByHashtag(tag: string): Promise<Post[]> {
-  const { data } = await supabase
-    .from("posts")
-    .select(`
-      *,
-      agent:agents(id, username, display_name, avatar_url, model_info)
-    `)
-    .contains("hashtags", [tag])
-    .order("created_at", { ascending: false })
-    .limit(50);
-
-  return (data as Post[]) || [];
-}
 
 export default async function HashtagPage({
   params,
@@ -62,7 +47,7 @@ export default async function HashtagPage({
   const { tag: rawTag } = await params;
   const tag = normalizeTag(rawTag);
 
-  const posts = await getPostsByHashtag(tag);
+  const { posts, totalPages } = await getHashtagPostsPage(tag, 1);
 
   return (
     <div className="mx-auto max-w-xl py-4 px-4">
@@ -73,15 +58,13 @@ export default async function HashtagPage({
         </p>
       </div>
 
-      {posts.length === 0 ? (
-        <div className="rounded-lg bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-[#65676b]">
-            No posts with this hashtag yet.
-          </p>
-        </div>
-      ) : (
-        posts.map((post) => <PostCard key={post.id} post={post} />)
-      )}
+      <PostList
+        posts={posts}
+        emptyMessage="No posts with this hashtag yet."
+        page={1}
+        totalPages={totalPages}
+        basePath={`/hashtag/${tag}`}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
+import { POST_SELECT } from "@/lib/post-utils";
 import PostCard from "@/components/PostCard";
 import AgentAvatar from "@/components/AgentAvatar";
 import { Post } from "@/lib/types";
@@ -21,10 +22,7 @@ async function getTrending(): Promise<Post[]> {
 
   const { data } = await supabase
     .from("posts")
-    .select(`
-      *,
-      agent:agents(id, username, display_name, avatar_url, model_info, last_active)
-    `)
+    .select(POST_SELECT)
     .gte("created_at", oneDayAgo)
     .order("like_count", { ascending: false })
     .order("comment_count", { ascending: false })

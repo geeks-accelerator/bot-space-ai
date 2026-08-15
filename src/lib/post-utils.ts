@@ -1,6 +1,23 @@
 import { supabase } from "@/lib/supabase";
-import { withRetry } from "@/lib/retry";
-import { logWarning } from "@/lib/logger";
+import { withRetryOrDefault } from "@/lib/retry";
+import type { Post } from "@/lib/types";
+
+/**
+ * The canonical column list for any query whose rows are rendered by
+ * `PostCard`. Use this rather than hand-writing the join.
+ *
+ * `last_active` is load-bearing: PostCard feeds it to AgentAvatar's online dot
+ * and to ActivityDot. A copy of this select that omitted it shipped to the
+ * hashtag page and made every agent there render as permanently Offline —
+ * nothing caught it, because a select is a template string with no types.
+ */
+export const POST_SELECT = `
+  *,
+  agent:agents(id, username, display_name, avatar_url, model_info, last_active)
+` as const;
+
+/** How many posts a paginated list shows. See the navigation plan §4.3. */
+export const POSTS_PER_PAGE = 25;
 
 export interface PostRef {
   id: string;
@@ -53,29 +70,19 @@ export async function getPostCard(id: string): Promise<PostCard | null> {
  * Fail-soft: see the note on getAgentRefs in resolve-agent.ts.
  */
 export async function getRecentPostIds(limit = 250): Promise<string[]> {
-  try {
-    return await withRetry(
-      async () => {
-        const { data, error } = await supabase
-          .from("posts")
-          .select("id")
-          .order("created_at", { ascending: false })
-          .limit(limit);
-        if (error) throw error;
-        return (data ?? []).map((p: { id: string }) => p.id);
-      },
-      { maxRetries: 2, context: "post-utils.getRecentPostIds" }
-    );
-  } catch (err) {
-    logWarning({
-      method: "",
-      path: "post-utils.getRecentPostIds",
-      errorMessage: `Falling back to on-demand rendering: ${
-        err instanceof Error ? err.message : String(err)
-      }`,
-    });
-    return [];
-  }
+  return withRetryOrDefault(
+    async () => {
+      const { data, error } = await supabase
+        .from("posts")
+        .select("id")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      return (data ?? []).map((p: { id: string }) => p.id);
+    },
+    [] as string[],
+    "post-utils.getRecentPostIds"
+  );
 }
 
 /**
@@ -84,34 +91,24 @@ export async function getRecentPostIds(limit = 250): Promise<string[]> {
  * set rather than a recent window.
  */
 export async function getPostRefs(): Promise<PostRef[]> {
-  try {
-    return await withRetry(
-      async () => {
-        const all: PostRef[] = [];
-        for (let from = 0; ; from += PAGE_SIZE) {
-          const { data, error } = await supabase
-            .from("posts")
-            .select("id, hashtags, created_at")
-            .order("created_at", { ascending: false })
-            .range(from, from + PAGE_SIZE - 1);
-          if (error) throw error;
-          const page = (data ?? []) as PostRef[];
-          all.push(...page);
-          if (page.length < PAGE_SIZE) return all;
-        }
-      },
-      { maxRetries: 2, context: "post-utils.getPostRefs" }
-    );
-  } catch (err) {
-    logWarning({
-      method: "",
-      path: "post-utils.getPostRefs",
-      errorMessage: `Returning empty post set: ${
-        err instanceof Error ? err.message : String(err)
-      }`,
-    });
-    return [];
-  }
+  return withRetryOrDefault(
+    async () => {
+      const all: PostRef[] = [];
+      for (let from = 0; ; from += PAGE_SIZE) {
+        const { data, error } = await supabase
+          .from("posts")
+          .select("id, hashtags, created_at")
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        const page = (data ?? []) as PostRef[];
+        all.push(...page);
+        if (page.length < PAGE_SIZE) return all;
+      }
+    },
+    [] as PostRef[],
+    "post-utils.getPostRefs"
+  );
 }
 
 /**
@@ -131,6 +128,110 @@ export async function getHashtagSlugs(refs?: PostRef[]): Promise<string[]> {
     }
   }
   return [...tags];
+}
+
+export interface PostsPage {
+  posts: Post[];
+  totalPages: number;
+}
+
+/** Rows `[from, to]` for a 1-based page number. */
+function pageRange(page: number): [number, number] {
+  const from = (page - 1) * POSTS_PER_PAGE;
+  return [from, from + POSTS_PER_PAGE - 1];
+}
+
+function pageCount(total: number | null): number {
+  return Math.max(1, Math.ceil((total ?? 0) / POSTS_PER_PAGE));
+}
+
+/**
+ * One page of an agent's posts, newest first.
+ *
+ * Offset paging rather than the API's cursor scheme: a crawler requests page 7
+ * from a cold URL, which `.lt("created_at", cursor)` cannot answer. The
+ * trade-off is that inserts shift rows between page loads — acceptable for an
+ * archive, and documented in the navigation plan §3.
+ */
+export async function getAgentPostsPage(agentId: string, page: number): Promise<PostsPage> {
+  return withRetryOrDefault(
+    async () => {
+      const [from, to] = pageRange(page);
+      const [{ data, error }, { count }] = await Promise.all([
+        supabase
+          .from("posts")
+          .select(POST_SELECT)
+          .eq("agent_id", agentId)
+          .order("created_at", { ascending: false })
+          .range(from, to),
+        supabase.from("posts").select("id", { count: "exact", head: true }).eq("agent_id", agentId),
+      ]);
+      if (error) throw error;
+      return { posts: (data as unknown as Post[]) ?? [], totalPages: pageCount(count) };
+    },
+    { posts: [], totalPages: 1 },
+    "post-utils.getAgentPostsPage"
+  );
+}
+
+/** One page of the global feed, newest first. */
+export async function getFeedPage(page: number): Promise<PostsPage> {
+  return withRetryOrDefault(
+    async () => {
+      const [from, to] = pageRange(page);
+      const [{ data, error }, { count }] = await Promise.all([
+        supabase
+          .from("posts")
+          .select(POST_SELECT)
+          .order("created_at", { ascending: false })
+          .range(from, to),
+        supabase.from("posts").select("id", { count: "exact", head: true }),
+      ]);
+      if (error) throw error;
+      return { posts: (data as unknown as Post[]) ?? [], totalPages: pageCount(count) };
+    },
+    { posts: [], totalPages: 1 },
+    "post-utils.getFeedPage"
+  );
+}
+
+/** One page of posts carrying `tag`, newest first. */
+export async function getHashtagPostsPage(tag: string, page: number): Promise<PostsPage> {
+  return withRetryOrDefault(
+    async () => {
+      const [from, to] = pageRange(page);
+      const [{ data, error }, { count }] = await Promise.all([
+        supabase
+          .from("posts")
+          .select(POST_SELECT)
+          .contains("hashtags", [tag])
+          .order("created_at", { ascending: false })
+          .range(from, to),
+        supabase
+          .from("posts")
+          .select("id", { count: "exact", head: true })
+          .contains("hashtags", [tag]),
+      ]);
+      if (error) throw error;
+      return { posts: (data as unknown as Post[]) ?? [], totalPages: pageCount(count) };
+    },
+    { posts: [], totalPages: 1 },
+    "post-utils.getHashtagPostsPage"
+  );
+}
+
+/** Every hashtag with its post count, for the tag index. */
+export async function getHashtagCounts(refs?: PostRef[]): Promise<Array<{ tag: string; count: number }>> {
+  const posts = refs ?? (await getPostRefs());
+  const counts = new Map<string, number>();
+  for (const post of posts) {
+    for (const tag of post.hashtags ?? []) {
+      if (tag) counts.set(tag.toLowerCase(), (counts.get(tag.toLowerCase()) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => a.tag.localeCompare(b.tag));
 }
 
 /**

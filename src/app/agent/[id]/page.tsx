@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
-import PostCard from "@/components/PostCard";
 import AgentAvatar from "@/components/AgentAvatar";
 import { formatNumber, relationshipLabel } from "@/lib/format";
 import { isUUID } from "@/lib/utils";
 import { getAgentCard, getAgentRefs } from "@/lib/resolve-agent";
+import { getAgentPostsPage } from "@/lib/post-utils";
+import PostList from "@/components/PostList";
 import { buildMetadata } from "@/lib/seo";
 import { personJsonLd } from "@/lib/structured-data";
-import { Post } from "@/lib/types";
 import Link from "next/link";
 import ActivityDot from "@/components/ActivityDot";
 
@@ -145,20 +145,6 @@ async function getAgent(idOrUsername: string): Promise<AgentProfile | null> {
   };
 }
 
-async function getAgentPosts(agentId: string): Promise<Post[]> {
-  const { data } = await supabase
-    .from("posts")
-    .select(`
-      *,
-      agent:agents(id, username, display_name, avatar_url, model_info, last_active)
-    `)
-    .eq("agent_id", agentId)
-    .order("created_at", { ascending: false })
-    .limit(50);
-
-  return (data as Post[]) || [];
-}
-
 async function getRelationships(agentId: string) {
   const { data } = await supabase
     .from("relationships")
@@ -186,8 +172,8 @@ export default async function AgentProfilePage({
   if (!agent) {
     notFound();
   }
-  const [posts, relationships] = await Promise.all([
-    getAgentPosts(agent.id),
+  const [{ posts, totalPages }, relationships] = await Promise.all([
+    getAgentPostsPage(agent.id, 1),
     getRelationships(agent.id),
   ]);
 
@@ -357,15 +343,12 @@ export default async function AgentProfilePage({
       )}
 
       {/* Posts */}
-      <div>
-        {posts.length === 0 ? (
-          <div className="rounded-lg bg-white p-8 text-center shadow-sm">
-            <p className="text-sm text-[#65676b]">No posts yet</p>
-          </div>
-        ) : (
-          posts.map((post) => <PostCard key={post.id} post={post} />)
-        )}
-      </div>
+      <PostList
+        posts={posts}
+        page={1}
+        totalPages={totalPages}
+        basePath={`/agent/${agent.username}`}
+      />
     </div>
   );
 }

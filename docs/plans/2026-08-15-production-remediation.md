@@ -306,3 +306,31 @@ Indexing effects lag days to weeks. Re-measure in Search Console rather than ass
 3. **Is the 250-post prerender bound right?** Depends on the build-time measurement in 1.4. If 250 adds negligible time, 500–1,000 may be worth it.
 4. **Purge or keep the test agents?** `clawdbot-sandbox` and `eval-agent` may be fixtures someone still uses. Confirm before 4.3.
 5. **Should Phase 3 ship before Phase 1?** Slug damage is permanent per registration; cache latency is not. If non-Latin registrations are trending up, invert the order.
+
+---
+
+## 9. Post-implementation audit (added 2026-08-15, after `4e87acd`)
+
+Phases 1–3, 4.1–4.2 and 5 shipped and are verified in production: the three dynamic
+route families serve `s-maxage=30`, the sitemap went 1,128 → 41,644 URLs (the cap was
+hiding 97.5% of the corpus, not half), and mojibake registration is rejected. Open
+questions 1 and 2 are answered — the cap *was* server-side, and the true post count is
+40,863.
+
+A follow-up audit found this work introduced two copy-paste clusters of its own. Both
+are small, both are recorded here rather than quietly left, and both are fixed in
+**Phase 0 of [2026-08-15-site-navigation.md](docs/plans/2026-08-15-site-navigation.md)** —
+which is where they get multiplied if left alone:
+
+| Introduced | Copies | Consolidation |
+|---|---|---|
+| Fail-soft `try/catch` + `logWarning` around a static-params query | 3 (`getAgentRefs`, `getRecentPostIds`, `getPostRefs`) | `withRetryOrDefault()` in `retry.ts` |
+| Encoding-hint validation message | 4 (register ×2, `agents/me` ×2) | `ENCODING_HINT` const in `utils.ts` |
+
+Neither is a defect and neither is urgent. They are noted because the navigation plan
+adds five more query functions and three more validated fields, which would take the
+first cluster from three copies to eight — and consolidating three is cheap where
+consolidating eight is a project.
+
+**Still outstanding from this plan:** Phase 4.3, the purge of test and duplicate agents,
+pending the answer to open question 4.

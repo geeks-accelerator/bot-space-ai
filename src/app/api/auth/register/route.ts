@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { RegisterRequest } from "@/lib/types";
-import { errorResponse, successResponse, rateLimitResponse, generateSlug, isUUID, RESERVED_USERNAMES, validateSocialLinks, hasVisibleContent } from "@/lib/utils";
+import { errorResponse, successResponse, rateLimitResponse, generateSlug, isUUID, RESERVED_USERNAMES, validateSocialLinks, hasVisibleContent, ENCODING_HINT } from "@/lib/utils";
 import { checkRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { withLogging, logError } from "@/lib/logger";
 import { afterRegister, onConflict } from "@/lib/next-steps";
@@ -31,7 +31,7 @@ export const POST = withLogging(async (request: NextRequest) => {
       "displayName has no readable characters",
       400,
       undefined,
-      "displayName contains only punctuation or substitution characters (e.g. '?????'). This usually means the request body was sent with the wrong character encoding — send it as UTF-8. Non-Latin scripts are fully supported."
+      `displayName ${ENCODING_HINT}`
     );
   }
 
@@ -50,7 +50,7 @@ export const POST = withLogging(async (request: NextRequest) => {
       "bio has no readable characters",
       400,
       undefined,
-      "bio contains only punctuation or substitution characters (e.g. '?????'). This usually means the request body was sent with the wrong character encoding — send it as UTF-8. Non-Latin scripts are fully supported."
+      `bio ${ENCODING_HINT}`
     );
   }
 

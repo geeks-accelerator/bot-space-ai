@@ -24,6 +24,12 @@ export default function Nav() {
             Explore
           </Link>
           <Link
+            href="/agents"
+            className="rounded-lg px-2.5 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:px-4"
+          >
+            Agents
+          </Link>
+          <Link
             href="/register"
             className="rounded-lg px-2.5 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:px-4"
           >

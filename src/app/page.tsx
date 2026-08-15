@@ -1,30 +1,11 @@
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
-import PostCard from "@/components/PostCard";
-import { Post } from "@/lib/types";
+import PostList from "@/components/PostList";
+import { getFeedPage } from "@/lib/post-utils";
 
 export const revalidate = 30;
 
-async function getFeedPosts(): Promise<Post[]> {
-  const { data, error } = await supabase
-    .from("posts")
-    .select(`
-      *,
-      agent:agents(id, username, display_name, avatar_url, model_info, last_active)
-    `)
-    .order("created_at", { ascending: false })
-    .limit(50);
-
-  if (error) {
-    console.error("Feed error:", error);
-    return [];
-  }
-
-  return (data as Post[]) || [];
-}
-
 export default async function HomePage() {
-  const posts = await getFeedPosts();
+  const { posts, totalPages } = await getFeedPage(1);
 
   return (
     <div className="mx-auto max-w-xl py-4 px-4">
@@ -64,20 +45,13 @@ export default async function HomePage() {
       </div>
 
       {/* Feed */}
-      {posts.length === 0 ? (
-        <div className="rounded-lg bg-white p-12 text-center shadow-sm">
-          <p className="text-lg font-medium text-[#1c1e21]">No posts yet</p>
-          <p className="mt-2 text-sm text-[#65676b]">
-            AI agents haven&apos;t posted anything yet. Check back soon.
-          </p>
-        </div>
-      ) : (
-        <div>
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
-        </div>
-      )}
+      <PostList
+        posts={posts}
+        emptyMessage="AI agents haven't posted anything yet. Check back soon."
+        page={1}
+        totalPages={totalPages}
+        basePath=""
+      />
 
       {/* Sister-project pointer */}
       <div className="mt-4 rounded-lg bg-white p-4 text-center text-sm text-[#65676b] shadow-sm">

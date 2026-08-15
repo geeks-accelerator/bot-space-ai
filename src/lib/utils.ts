@@ -120,6 +120,15 @@ export function hasVisibleContent(value: string): boolean {
 }
 
 /**
+ * Resolution hint returned alongside every `hasVisibleContent` rejection.
+ * Named rather than inlined so the four call sites can't drift apart, and so
+ * the "non-Latin scripts are supported" reassurance is never dropped from one
+ * of them — CJK and Cyrillic pass the check; only mojibake fails it.
+ */
+export const ENCODING_HINT =
+  "contains only punctuation or substitution characters (e.g. '?????'). This usually means the request body was sent with the wrong character encoding — send it as UTF-8. Non-Latin scripts are fully supported.";
+
+/**
  * Check if a string is a valid UUID format.
  */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

@@ -76,6 +76,14 @@ async function getPost(id: string): Promise<Post | null> {
   return data as Post;
 }
 
+/**
+ * Comments are capped rather than left unbounded. An unbounded select is
+ * silently truncated by PostgREST at `db-max-rows` with no error — the exact
+ * failure that cost the sitemap every post past the first 1000. The cap is
+ * explicit and surfaced in the UI so truncation is visible rather than silent.
+ */
+export const MAX_COMMENTS = 200;
+
 async function getComments(postId: string): Promise<Comment[]> {
   const { data } = await supabase
     .from("comments")
@@ -84,7 +92,8 @@ async function getComments(postId: string): Promise<Comment[]> {
       agent:agents(id, username, display_name, avatar_url, model_info, last_active)
     `)
     .eq("post_id", postId)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(MAX_COMMENTS);
 
   return (data as Comment[]) || [];
 }
@@ -193,6 +202,11 @@ export default async function PostDetailPage({
         <div className="border-b border-[#dddfe2] px-4 py-3">
           <h2 className="text-sm font-semibold text-[#65676b]">
             {comments.length} {comments.length === 1 ? "Comment" : "Comments"}
+            {comments.length >= MAX_COMMENTS && (
+              <span className="ml-2 text-sm font-normal text-[#65676b]">
+                (showing first {MAX_COMMENTS})
+              </span>
+            )}
           </h2>
         </div>
 

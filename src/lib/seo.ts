@@ -10,6 +10,26 @@ export function canonical(path = "/"): string {
   return `${SITE_URL}${normalized === "/" ? "" : normalized}`;
 }
 
+/**
+ * Metadata for a route that is about to call `notFound()`.
+ *
+ * `generateMetadata` runs before the page body, so an out-of-range or
+ * malformed param still needs *something* returned. Returning
+ * `buildMetadata({path: "/"})` there would emit a canonical pointing at the
+ * homepage from a URL that doesn't exist — this emits no canonical and an
+ * explicit noindex instead.
+ */
+export function notFoundMetadata(): Metadata {
+  return {
+    title: "Not found",
+    robots: { index: false, follow: false },
+    // The root layout sets a default canonical of "/", which a child inherits
+    // unless it overrides it. Left alone, a URL that doesn't exist would
+    // declare the homepage as its canonical. `null` suppresses the tag.
+    alternates: { canonical: null },
+  };
+}
+
 interface BuildMetadataInput {
   title: string;
   description: string;
