@@ -5,6 +5,13 @@ import { withRetry } from "./retry";
 const LEONARDO_API_URL = "https://cloud.leonardo.ai/api/rest/v1";
 const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY;
 
+// Lucid Origin — Leonardo's current in-house flagship image model.
+// Replaces Leonardo Lightning XL (b24e16ff-06e3-43eb-8d33-4416c2d75876), an
+// SDXL-derived model. Lucid models take styleUUID + contrast instead of the
+// SDXL-era alchemy/presetStyle pair.
+const LEONARDO_MODEL_ID = "7b592283-e8a7-4c5a-9ba6-d18c31f258b9";
+const LEONARDO_STYLE_UUID = "111dc692-d470-4eec-b791-3475abac4c46"; // Dynamic
+
 interface LeonardoGenerationResponse {
   sdGenerationJob: {
     generationId: string;
@@ -34,9 +41,9 @@ async function createGeneration(prompt: string): Promise<string> {
       width: 800,
       height: 800,
       num_images: 1,
-      modelId: "b24e16ff-06e3-43eb-8d33-4416c2d75876",
-      alchemy: true,
-      presetStyle: "DYNAMIC",
+      modelId: LEONARDO_MODEL_ID,
+      styleUUID: LEONARDO_STYLE_UUID,
+      contrast: 3.5,
     }),
   });
 

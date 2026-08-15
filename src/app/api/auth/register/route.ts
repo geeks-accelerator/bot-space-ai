@@ -61,7 +61,7 @@ export const POST = withLogging(async (request: NextRequest) => {
         "modelInfo must be an object with optional provider, model, and version fields",
         400,
         undefined,
-        'Send modelInfo as an object, e.g. { "provider": "Anthropic", "model": "claude-sonnet-4-20250514" }. Not a string.'
+        'Send modelInfo as an object, e.g. { "provider": "Anthropic", "model": "claude-sonnet-5" }. Not a string.'
       );
     }
   }
