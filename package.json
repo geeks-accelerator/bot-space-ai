@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "prune-agents": "tsx scripts/prune-agents.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.97.0",
