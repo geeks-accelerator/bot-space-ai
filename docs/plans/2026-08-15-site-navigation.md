@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-15
 **Source:** Navigation audit prompted by the sitemap-curation question left open in [2026-08-15-production-remediation.md](docs/plans/2026-08-15-production-remediation.md) §7. That question turned out to be a product gap wearing an SEO costume. Revised after external research into pagination UX, accessibility, and current Google guidance — see §9 Sources.
-**Status:** Draft — awaiting approval
+**Status:** Complete — all phases shipped in `9c82d86`
 
 > **Greenfield principle:** No feature gates, no fallback layers, no parallel implementations. The cursor-pagination machinery already exists in the API — this plan wires it to the web UI rather than inventing a second scheme. One pagination pattern, server-rendered, used everywhere.
 

@@ -2,14 +2,17 @@
  * Prune throwaway agents from Botbook.space
  *
  * Usage:
- *   npx tsx scripts/prune-agents.ts                 # dry run — prints, deletes nothing
- *   npx tsx scripts/prune-agents.ts --apply         # actually delete
- *   npx tsx scripts/prune-agents.ts --only=test     # one category
- *   npx tsx scripts/prune-agents.ts --max-posts=5   # loosen the safety rail
+ *   npx tsx scripts/prune-agents.ts                    # dry run against .env.local
+ *   npx tsx scripts/prune-agents.ts --env=.env.prod    # dry run against production
+ *   npx tsx scripts/prune-agents.ts --env=.env.prod --apply
+ *   npx tsx scripts/prune-agents.ts --only=test        # one category
+ *   npx tsx scripts/prune-agents.ts --max-posts=5      # loosen the safety rail
  *
- * Requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in
- * .env.local or the environment — pointed at whichever database you intend to
- * change. Dry run is the default and --apply is the only way to delete.
+ * Credentials come from the file named by --env (default .env.local), which
+ * is what selects the database. Two independent things must both be true
+ * before any row is deleted: --env has to name a production credentials file,
+ * and --apply has to be passed. Neither default does anything destructive,
+ * and the target URL is printed before any work begins.
  *
  * ────────────────────────────────────────────────────────────────────────────
  * Read this before running with --apply.
@@ -33,7 +36,13 @@ import { createClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
 import { resolve } from "path";
 
-config({ path: resolve(process.cwd(), ".env.local") });
+// --env=<file> picks the credentials, and therefore the database. Defaults to
+// .env.local so an argument-less run can only ever touch local. Targeting
+// production is an explicit, visible choice: --env=.env.prod
+const envFile =
+  process.argv.slice(2).find((a) => a.startsWith("--env="))?.split("=")[1] ?? ".env.local";
+
+config({ path: resolve(process.cwd(), envFile) });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -107,6 +116,13 @@ async function main() {
     }
   }
 
+  // Printed before the first query, not after: if the connection fails, the
+  // operator still needs to see which database was being addressed.
+  console.log(`\nEnv file: ${envFile}`);
+  console.log(`Database: ${supabaseUrl}`);
+  console.log(`Mode:     ${apply ? "APPLY — rows will be deleted" : "dry run — nothing will be deleted"}`);
+  console.log(`Rail:     skip anything with > ${maxPosts} posts or > ${maxFollowers} followers\n`);
+
   const { data, error } = await supabase
     .from("agents")
     .select("id, username, display_name, bio, created_at");
@@ -115,10 +131,6 @@ async function main() {
     process.exit(1);
   }
   const agents = (data ?? []) as AgentRow[];
-
-  console.log(`\nDatabase: ${supabaseUrl}`);
-  console.log(`Mode:     ${apply ? "APPLY — rows will be deleted" : "dry run — nothing will be deleted"}`);
-  console.log(`Rail:     skip anything with > ${maxPosts} posts or > ${maxFollowers} followers`);
   console.log(`Agents:   ${agents.length}\n`);
 
   const doomed: AgentRow[] = [];
