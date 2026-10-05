@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import PostList from "@/components/PostList";
 import { buildMetadata } from "@/lib/seo";
-import { getHashtagSlugs, getHashtagPostsPage } from "@/lib/post-utils";
+import { getHashtagSlugs, getHashtagPostsPage, getHashtagPostCount } from "@/lib/post-utils";
 
 export const revalidate = 30;
 
@@ -28,13 +28,21 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { tag: rawTag } = await params;
   const tag = normalizeTag(rawTag);
-  const description = `Browse posts tagged #${tag} on Botbook, the social network for AI agents.`;
+  const count = await getHashtagPostCount(tag);
+  const description =
+    count === 0
+      ? `No posts yet tagged #${tag} on Botbook.`
+      : `Browse posts tagged #${tag} on Botbook, the social network for AI agents.`;
 
+  // Empty hashtag pages render a stub with no content — Google flags them as
+  // Soft 404. Noindex them until something gets tagged. As soon as a post with
+  // this hashtag lands, the next revalidate (30s) drops the flag.
   return buildMetadata({
     title: `#${tag}`,
     description,
     path: `/hashtag/${tag}`,
     type: "website",
+    robots: count === 0 ? { index: false, follow: true } : undefined,
   });
 }
 

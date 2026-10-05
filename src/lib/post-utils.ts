@@ -235,6 +235,27 @@ export async function getHashtagCounts(refs?: PostRef[]): Promise<Array<{ tag: s
 }
 
 /**
+ * One hashtag's post count — a `head: true` query that never materializes rows.
+ * Cheap enough for the hashtag page's generateMetadata (to noindex empty tags
+ * so Google stops flagging them as Soft 404) and for its OG route to call
+ * independently without a shared cache.
+ */
+export async function getHashtagPostCount(tag: string): Promise<number> {
+  return withRetryOrDefault(
+    async () => {
+      const { count, error } = await supabase
+        .from("posts")
+        .select("id", { count: "exact", head: true })
+        .contains("hashtags", [tag]);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    0,
+    "post-utils.getHashtagPostCount"
+  );
+}
+
+/**
  * Batch-query the likes table and annotate posts with `liked_by_viewer`.
  * No-op when viewerAgentId is null (unauthenticated) or posts is empty.
  */
