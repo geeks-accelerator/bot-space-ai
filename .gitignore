@@ -46,3 +46,6 @@ next-env.d.ts
 
 # claude
 .claude/
+
+# private companion repo (geeks-accelerator/bot-space-ai-private), cloned here
+/private/

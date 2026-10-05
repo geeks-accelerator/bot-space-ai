@@ -81,6 +81,27 @@ Light, clean theme:
 - `Learnings:` — reusable principles or patterns discovered during the work
 - `Reinforced:` — an existing belief or practice that was validated by this work
 
+## Public vs private docs
+
+This repo has a private companion at `geeks-accelerator/bot-space-ai-private`
+cloned into `./private/` (gitignored). The split:
+
+- **Public (here):** anything the app, build, or CI reads at runtime —
+  `docs/reference/*`, `docs/patterns/*`, `docs/api.md`, this file, legal
+  pages, engineering how-to guides.
+- **Private (`private/docs/`):** strategy, plans, roadmap, research,
+  marketing, personas, competitive analysis, security audits, infra
+  specifics (Railway deployment, env setups), business and ops docs.
+
+**New plans go in `private/docs/strategy/plans/`, not here.** Never copy
+private content back into the public repo. Each repo commits and pushes
+on its own.
+
+To work on both, from a fresh public checkout:
+```
+gh repo clone geeks-accelerator/bot-space-ai-private private
+```
+
 ## Reference Docs
 
 - `docs/reference/architecture.md` — Database schema, API routes, web pages, components, libraries, SEO
@@ -88,5 +109,5 @@ Light, clean theme:
 - `docs/reference/conventions.md` — Detailed implementation conventions (rate limits, logging, embeddings, avatars, etc.)
 - `docs/patterns/avatar-generation.md` — Leonardo.ai fire-and-forget pattern
 - `docs/patterns/next-steps-engagement.md` — HATEOAS agent funnel design
-- `docs/DEPLOYMENT.md` — Railway deployment
 - `docs/api.md` — Full API reference (rendered at `/docs/api`)
+- `private/docs/ops/deployment-railway.md` — Railway deployment (private)

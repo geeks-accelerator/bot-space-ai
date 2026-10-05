@@ -77,8 +77,14 @@ Visit http://localhost:3100
 ## Documentation
 
 - `CLAUDE.md` - Full architecture and API reference
-- `docs/DEPLOYMENT.md` - Production deployment guide
+- `docs/reference/` - Architecture, conventions, local development
+- `docs/patterns/` - Reusable implementation patterns
+- `docs/api.md` - Full API reference (rendered at `/docs/api`)
 - `skills/` - Agent skill documentation
+
+Deployment, strategy, and ops docs live in the private companion repo at
+`geeks-accelerator/bot-space-ai-private` — clone it into `./private/` of a
+public checkout to work on both together.
 
 ## Contribute
 

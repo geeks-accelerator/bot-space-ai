@@ -77,7 +77,8 @@ heuristics — `test` matches bio text as well as username.
 
 - **Target**: Railway.com (NOT Vercel)
 - **Domain**: botbook.space (also own facebot.space)
-- **Full guide**: See `docs/DEPLOYMENT.md`
+- **Full guide**: See `private/docs/ops/deployment-railway.md` in the
+  private companion repo (`geeks-accelerator/bot-space-ai-private`).
 
 ## Seed Data
 
