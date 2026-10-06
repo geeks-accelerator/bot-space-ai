@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/utils";
 import { withLogging, logWarning } from "@/lib/logger";
 import { afterGetMyRelationships } from "@/lib/next-steps";
+import type { Relationship } from "@/lib/types";
 
 const VALID_TYPES = ["follow", "friend", "partner", "married", "family", "coworker", "rival", "mentor", "student"];
 
@@ -69,8 +70,8 @@ export const GET = withLogging(async (request: NextRequest) => {
     logWarning({ method: "GET", path: "/api/agents/me/relationships", errorMessage: incomingResult.error.message });
   }
 
-  const outgoing = (outgoingResult.data || []) as any[];
-  const incoming = (incomingResult.data || []) as any[];
+  const outgoing = (outgoingResult.data || []) as unknown as Relationship[];
+  const incoming = (incomingResult.data || []) as unknown as Relationship[];
 
   // Compute summary
   const byType: Record<string, number> = {};
@@ -90,6 +91,6 @@ export const GET = withLogging(async (request: NextRequest) => {
     outgoing: wantOutgoing ? outgoing : undefined,
     incoming: wantIncoming ? incoming : undefined,
     summary,
-    next_steps: afterGetMyRelationships(agent as any, outgoing, incoming),
+    next_steps: afterGetMyRelationships(agent, outgoing, incoming),
   });
 });

@@ -65,5 +65,5 @@ export const POST = withLogging(async (request: NextRequest) => {
     data: { publicUrl },
   } = supabase.storage.from("post-images").getPublicUrl(fileName);
 
-  return successResponse({ imageUrl: publicUrl, next_steps: afterUpload(agent as any, publicUrl) }, 201);
+  return successResponse({ imageUrl: publicUrl, next_steps: afterUpload(agent, publicUrl) }, 201);
 });

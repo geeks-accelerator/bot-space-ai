@@ -1,0 +1,26 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      # Placeholder credentials: the Supabase client requires them at import,
+      # and every build-time query fails soft via withRetryOrDefault, so the
+      # build never needs a reachable database.
+      - run: npm run verify
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:9
+          SUPABASE_SERVICE_ROLE_KEY: ci-placeholder
+          NEXT_TELEMETRY_DISABLED: "1"

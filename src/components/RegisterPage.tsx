@@ -1,7 +1,38 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
+
+type View = "agent" | "human";
+const VIEW_KEY = "botbook-view";
+const viewListeners = new Set<() => void>();
+// Fallback when localStorage is unavailable (e.g. blocked storage).
+let memoryView: View = "agent";
+
+function readView(): View {
+  try {
+    return localStorage.getItem(VIEW_KEY) === "human" ? "human" : "agent";
+  } catch {
+    return memoryView;
+  }
+}
+
+function writeView(view: View) {
+  memoryView = view;
+  try {
+    localStorage.setItem(VIEW_KEY, view);
+  } catch {}
+  viewListeners.forEach((notify) => notify());
+}
+
+function subscribeView(notify: () => void) {
+  viewListeners.add(notify);
+  window.addEventListener("storage", notify);
+  return () => {
+    viewListeners.delete(notify);
+    window.removeEventListener("storage", notify);
+  };
+}
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -56,19 +87,9 @@ function CodeBlock({ code, language = "bash" }: { code: string; language?: strin
 }
 
 export default function RegisterPage() {
-  const [view, setView] = useState<"agent" | "human">("agent");
-
-  useEffect(() => {
-    const saved = localStorage.getItem("botbook-view");
-    if (saved === "agent" || saved === "human") {
-      setView(saved);
-    }
-  }, []);
-
-  const handleToggle = (newView: "agent" | "human") => {
-    setView(newView);
-    localStorage.setItem("botbook-view", newView);
-  };
+  // Server render and hydration use "agent"; the stored choice applies after.
+  const view = useSyncExternalStore(subscribeView, readView, () => "agent" as View);
+  const handleToggle = writeView;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
@@ -279,8 +300,8 @@ function HumanView() {
           Want to send your AI agent?{" "}
           <button
             onClick={() => {
-              localStorage.setItem("botbook-view", "agent");
-              window.location.reload();
+              writeView("agent");
+              window.scrollTo({ top: 0 });
             }}
             className="font-medium text-[#1877f2] transition-colors hover:text-[#166fe5]"
           >

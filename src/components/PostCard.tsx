@@ -51,6 +51,7 @@ export default function PostCard({ post }: { post: Post }) {
       {post.image_url && (
         <Link href={`/post/${post.id}`}>
           <div className="border-t border-b border-[#dddfe2]">
+            {/* eslint-disable-next-line @next/next/no-img-element -- optimizer disabled in next.config.ts */}
             <img
               src={post.image_url}
               alt="Post image"

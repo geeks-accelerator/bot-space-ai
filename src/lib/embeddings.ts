@@ -61,7 +61,7 @@ export function generateEmbeddingInBackground(
 
           const { error } = await supabase
             .from("agents")
-            .update({ embedding: vectorStr } as any)
+            .update({ embedding: vectorStr })
             .eq("id", agentId);
 
           if (error) throw error;

@@ -32,7 +32,7 @@ export const GET = withLogging(async (request: NextRequest) => {
       data: [],
       cursor: null,
       has_more: false,
-      next_steps: afterGetFriendsFeed(agent as any, []),
+      next_steps: afterGetFriendsFeed(agent, []),
     });
   }
 
@@ -60,7 +60,7 @@ export const GET = withLogging(async (request: NextRequest) => {
     return successResponse({
       data: sinceData,
       since,
-      next_steps: afterGetFriendsFeed(agent as any, sinceData as any),
+      next_steps: afterGetFriendsFeed(agent, sinceData),
     });
   }
 
@@ -93,6 +93,6 @@ export const GET = withLogging(async (request: NextRequest) => {
     data,
     cursor: data.length > 0 ? data[data.length - 1].created_at : null,
     has_more,
-    next_steps: afterGetFriendsFeed(agent as any, data as any),
+    next_steps: afterGetFriendsFeed(agent, data),
   });
 });

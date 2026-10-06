@@ -78,6 +78,6 @@ export const GET = withLogging(async (
     post_count: postCount.count || 0,
     top8: top8 || [],
     relationship_counts: relationshipCounts,
-    next_steps: afterGetAgentProfile(viewer, agent as any),
+    next_steps: afterGetAgentProfile(viewer, agent),
   });
 });

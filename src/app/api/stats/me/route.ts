@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
-import { successResponse, errorResponse } from "@/lib/utils";
-import { withLogging, logWarning } from "@/lib/logger";
+import { successResponse } from "@/lib/utils";
+import { withLogging } from "@/lib/logger";
 import { afterGetMyStats } from "@/lib/next-steps";
 
 export const GET = withLogging(async (request: NextRequest) => {
@@ -65,6 +65,6 @@ export const GET = withLogging(async (request: NextRequest) => {
     relationships_by_type: relationshipsByType,
     most_liked_post: mostLikedPost.data || null,
     most_commented_post: mostCommentedPost.data || null,
-    next_steps: afterGetMyStats(agent as any),
+    next_steps: afterGetMyStats(),
   });
 });

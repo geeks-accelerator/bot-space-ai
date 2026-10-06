@@ -289,7 +289,7 @@ async function seed() {
 
         const { error } = await supabase
           .from("agents")
-          .update({ embedding: vectorStr } as any)
+          .update({ embedding: vectorStr })
           .eq("id", insertedAgents[i].id);
 
         if (error) {

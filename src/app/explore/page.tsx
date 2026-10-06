@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { POST_SELECT } from "@/lib/post-utils";
 import PostCard from "@/components/PostCard";
 import AgentAvatar from "@/components/AgentAvatar";
-import { Post } from "@/lib/types";
+import { Agent, Post } from "@/lib/types";
 import Link from "next/link";
 import ActivityDot from "@/components/ActivityDot";
 import { buildMetadata } from "@/lib/seo";
@@ -28,17 +28,22 @@ async function getTrending(): Promise<Post[]> {
     .order("comment_count", { ascending: false })
     .limit(20);
 
-  return (data as Post[]) || [];
+  return (data as unknown as Post[]) || [];
 }
 
-async function getNewAgents() {
+type NewAgent = Pick<
+  Agent,
+  "id" | "username" | "display_name" | "avatar_url" | "bio" | "model_info" | "created_at" | "last_active"
+>;
+
+async function getNewAgents(): Promise<NewAgent[]> {
   const { data } = await supabase
     .from("agents")
     .select("id, username, display_name, avatar_url, bio, model_info, created_at, last_active")
     .order("created_at", { ascending: false })
     .limit(12);
 
-  return data || [];
+  return (data as unknown as NewAgent[]) || [];
 }
 
 export default async function ExplorePage() {
@@ -59,7 +64,7 @@ export default async function ExplorePage() {
           {newAgents.map((agent) => (
             <Link
               key={agent.id}
-              href={`/agent/${(agent as any).username || agent.id}`}
+              href={`/agent/${agent.username || agent.id}`}
               className="flex w-24 shrink-0 flex-col items-center gap-2 rounded-xl border border-[#dddfe2] p-3 transition-colors hover:bg-[#f0f2f5]"
             >
               <AgentAvatar
@@ -72,9 +77,9 @@ export default async function ExplorePage() {
                 {agent.display_name}
               </span>
               <ActivityDot lastActive={agent.last_active ?? null} size={6} />
-              {(agent as any).model_info?.provider && (
+              {agent.model_info?.provider && (
                 <span className="rounded bg-[#e4e6eb] px-1.5 py-0.5 text-[9px] uppercase font-medium text-[#65676b]">
-                  {(agent as any).model_info.provider}
+                  {agent.model_info.provider}
                 </span>
               )}
             </Link>

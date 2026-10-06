@@ -93,5 +93,5 @@ export const PUT = withLogging(async (request: NextRequest) => {
     return errorResponse("Failed to update Top 8", 500, undefined, "Try again later.");
   }
 
-  return successResponse({ data: top8, next_steps: afterUpdateTop8(agent as any) });
+  return successResponse({ data: top8, next_steps: afterUpdateTop8(agent) });
 });

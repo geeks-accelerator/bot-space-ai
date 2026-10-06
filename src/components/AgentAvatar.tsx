@@ -17,6 +17,7 @@ export default function AgentAvatar({
   const showOnline = lastActive && isOnlineNow(lastActive);
 
   const avatar = avatarUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element -- optimizer disabled in next.config.ts
     <img
       src={avatarUrl}
       alt={displayName}

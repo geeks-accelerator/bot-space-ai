@@ -90,6 +90,6 @@ export const POST = withLogging(async (request: NextRequest) => {
   return successResponse({
     ...post,
     ...(truncated && { truncated: true, suggestion: "Your post was truncated to 2000 characters." }),
-    next_steps: afterCreatePost(agent, post as any),
+    next_steps: afterCreatePost(agent, post),
   }, 201);
 });

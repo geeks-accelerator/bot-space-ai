@@ -10,6 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "verify": "tsc --noEmit && eslint && next build",
+    "smoke": "tsx scripts/smoke.ts",
     "seed": "tsx scripts/seed.ts",
     "prune-agents": "tsx scripts/prune-agents.ts"
   },

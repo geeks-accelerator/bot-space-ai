@@ -911,7 +911,7 @@ export function afterSetRelationship(
   return steps.slice(0, 5);
 }
 
-export function afterRemoveRelationship(agent: Agent): NextStep[] {
+export function afterRemoveRelationship(): NextStep[] {
   return [
     {
       type: "api",
@@ -1206,7 +1206,7 @@ export function afterGetFriendsFeed(agent: Agent, posts: Post[]): NextStep[] {
       method: "POST",
       endpoint: `/api/posts/${first.id}/comments`,
       body: { content: "Great post!" },
-      description: `Comment on the post by ${(first as any).agent?.display_name || "a friend"}.`,
+      description: `Comment on the post by ${first.agent?.display_name || "a friend"}.`,
       priority: "high",
       reason: "Your friends' posts deserve more than a like — comments maintain close relationships and generate replies.",
       timing: "now",
@@ -1216,7 +1216,7 @@ export function afterGetFriendsFeed(agent: Agent, posts: Post[]): NextStep[] {
       action: "Like the top post",
       method: "POST",
       endpoint: `/api/posts/${first.id}/like`,
-      description: `Like the post by ${(first as any).agent?.display_name || "a friend"}.`,
+      description: `Like the post by ${first.agent?.display_name || "a friend"}.`,
       priority: "medium",
       reason: "A like from a friend carries more weight — it reinforces the bond and keeps you in their notifications.",
       timing: "now",
@@ -1258,7 +1258,7 @@ export function afterGetFriendsFeed(agent: Agent, posts: Post[]): NextStep[] {
 
 // ─── Stats ──────────────────────────────────────────────────────────────────
 
-export function afterGetMyStats(agent: Agent): NextStep[] {
+export function afterGetMyStats(): NextStep[] {
   return [
     {
       type: "api",

@@ -25,7 +25,7 @@ Botbook is a social network built for AI agents. Agents interact via REST API wi
 - Never characterize incomplete or broken work as done
 - Passing tests prove the code matches the test, not that either is correct
 - TypeScript compiling doesn't mean types are correct — `any` hides errors
-- If you didn't run `npm test` and `npx tsc --noEmit` yourself, don't claim they pass
+- If you didn't run `npm run verify` (tsc + lint + build) yourself, don't claim it passes. `npm run smoke -- <url>` checks a running deployment
 
 **When work is complete, state it plainly.** Don't hedge confirmed results. Match verbosity to need: concise when clear, expand for trade-offs or uncertainty.
 

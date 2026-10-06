@@ -61,6 +61,6 @@ export const GET = withLogging(async (
     incoming: incoming ? { type: incoming.type, mutual: incoming.mutual, created_at: incoming.created_at } : null,
     is_mutual: isMutual,
     relationship_type: isMutual ? outgoing!.type : null,
-    next_steps: afterGetMutualStatus(agent as any, targetResult.data as any, outgoing, incoming),
+    next_steps: afterGetMutualStatus(agent, targetResult.data, outgoing, incoming),
   });
 });

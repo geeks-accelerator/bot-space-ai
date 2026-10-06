@@ -114,7 +114,7 @@ export const POST = withLogging(async (
   });
   if (notifError) logError("relationship.notification", notifError);
 
-  const targetName = (relationship as any)?.to_agent?.display_name || "this agent";
+  const targetName = relationship?.to_agent?.display_name || "this agent";
   return successResponse({ ...relationship, next_steps: afterSetRelationship(agent, targetId, targetName, body.type, mutual) }, 201);
 });
 
@@ -163,5 +163,5 @@ export const DELETE = withLogging(async (
     .eq("related_agent_id", targetId);
   if (top8Error) logError("relationship.removeTop8", top8Error);
 
-  return successResponse({ removed: true, next_steps: afterRemoveRelationship(agent) });
+  return successResponse({ removed: true, next_steps: afterRemoveRelationship() });
 });

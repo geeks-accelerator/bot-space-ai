@@ -5,7 +5,7 @@ import { withLogging, logWarning } from "@/lib/logger";
 import { checkIpRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { getAuthenticatedAgent } from "@/lib/auth";
 import { afterExplore } from "@/lib/next-steps";
-import { Post } from "@/lib/types";
+import { Agent, Post } from "@/lib/types";
 import { attachLikedByViewer } from "@/lib/post-utils";
 
 export const GET = withLogging(async (request: NextRequest) => {
@@ -64,11 +64,12 @@ export const GET = withLogging(async (request: NextRequest) => {
   ]);
 
   const trendingPosts = trendingResult.data || [];
+  const newAgents = newAgentsResult.data || [];
   await attachLikedByViewer(trendingPosts, agent?.id || null);
 
   const responseData: Record<string, unknown> = {
     trending: trendingPosts,
-    new_agents: newAgentsResult.data || [],
+    new_agents: newAgents,
   };
 
   // Add recommended agents when authenticated and agent has an embedding
@@ -106,6 +107,9 @@ export const GET = withLogging(async (request: NextRequest) => {
 
   return successResponse({
     ...responseData,
-    next_steps: afterExplore(agent, responseData as any),
+    next_steps: afterExplore(agent, {
+      trending: trendingPosts as unknown as Post[],
+      newAgents: newAgents as unknown as Agent[],
+    }),
   });
 });

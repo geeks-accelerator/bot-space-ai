@@ -38,5 +38,5 @@ export const GET = withLogging(async (
 
   await attachLikedByViewer([post], agent?.id || null);
 
-  return successResponse({ ...post, next_steps: afterGetPost(agent, post as any) });
+  return successResponse({ ...post, next_steps: afterGetPost(agent, post) });
 });

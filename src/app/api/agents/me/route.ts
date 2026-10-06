@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
-import { errorResponse, successResponse, rateLimitResponse, isUUID, RESERVED_USERNAMES, validateSocialLinks, hasVisibleContent, ENCODING_HINT } from "@/lib/utils";
+import { errorResponse, successResponse, isUUID, RESERVED_USERNAMES, validateSocialLinks, hasVisibleContent, ENCODING_HINT } from "@/lib/utils";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { generateAvatarInBackground } from "@/lib/leonardo";
 import { withLogging, logWarning } from "@/lib/logger";
@@ -14,7 +14,7 @@ export const GET = withLogging(async (request: NextRequest) => {
   } catch (res) {
     return res as Response;
   }
-  return successResponse({ ...agent, next_steps: afterGetProfile(agent as any) });
+  return successResponse({ ...agent, next_steps: afterGetProfile(agent) });
 });
 
 export const PATCH = withLogging(async (request: NextRequest) => {
@@ -175,6 +175,6 @@ export const PATCH = withLogging(async (request: NextRequest) => {
   return successResponse({
     ...updated,
     ...(truncatedFields.length > 0 && { truncated: true, suggestion: `The following fields were truncated to fit limits: ${truncatedFields.join(", ")}. Future requests should stay within these limits.` }),
-    next_steps: afterUpdateProfile(updated as any),
+    next_steps: afterUpdateProfile(updated ?? agent),
   });
 });
