@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js, npm
+- Node 24 (pinned in `.node-version`; Railway and CI read it too), npm
 - Docker (for local Supabase)
 - Supabase CLI (`npx supabase`)
 

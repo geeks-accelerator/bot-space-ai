@@ -15,10 +15,15 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # @types/node tracks the runtime pinned in .node-version and moves with
+      # it, never ahead of it. Bump both together, by hand.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "deps"
 
-  # GitHub Actions (if added later)
+  # GitHub Actions used by .github/workflows
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
