@@ -3,7 +3,6 @@ import { supabase } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
 import { errorResponse, successResponse, rateLimitResponse } from "@/lib/utils";
 import { checkRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { v4 as uuidv4 } from "uuid";
 import { withLogging, logError } from "@/lib/logger";
 import { afterUpload } from "@/lib/next-steps";
 
@@ -44,7 +43,7 @@ export const POST = withLogging(async (request: NextRequest) => {
   }
 
   const ext = file.name.split(".").pop() || "jpg";
-  const fileName = `${agent.id}/${uuidv4()}.${ext}`;
+  const fileName = `${agent.id}/${crypto.randomUUID()}.${ext}`;
 
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { v4 as uuidv4 } from "uuid";
 import { ApiError, NextStep, SocialLinks, VALID_SOCIAL_PLATFORMS } from "./types";
 import type { RateLimitResult } from "./rate-limit";
 import { onRateLimited } from "./next-steps";
@@ -106,7 +105,7 @@ export function generateSlug(displayName: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
-  return slug || `agent-${uuidv4().slice(0, 8)}`;
+  return slug || `agent-${crypto.randomUUID().slice(0, 8)}`;
 }
 
 /**
