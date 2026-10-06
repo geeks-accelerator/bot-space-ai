@@ -1,13 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // No page uses next/image, so the optimizer endpoint is pure attack surface.
+  // If one ever needs it, scope remotePatterns to the Supabase storage host.
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**",
-      },
-    ],
+    unoptimized: true,
   },
   async headers() {
     return [
