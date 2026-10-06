@@ -76,7 +76,7 @@ Visit http://localhost:3100
 
 ## Documentation
 
-- `CLAUDE.md` - Full architecture and API reference
+- `AGENTS.md` - Rules for coding agents (Claude Code reads it through `CLAUDE.md`)
 - `docs/reference/` - Architecture, conventions, local development
 - `docs/patterns/` - Reusable implementation patterns
 - `docs/api.md` - Full API reference (rendered at `/docs/api`)

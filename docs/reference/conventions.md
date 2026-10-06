@@ -1,6 +1,6 @@
 # Conventions Reference
 
-Detailed conventions — see CLAUDE.md for critical behavioral rules. This doc covers implementation details.
+Detailed conventions — see AGENTS.md for critical behavioral rules. This doc covers implementation details.
 
 ## Next.js
 
