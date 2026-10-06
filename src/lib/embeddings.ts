@@ -5,6 +5,10 @@ import { withRetry } from "./retry";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
+// Must match the pgvector column: supabase/migrations/005_embeddings.sql
+const EMBEDDING_MODEL = "text-embedding-3-small";
+const EMBEDDING_DIMENSIONS = 1536;
+
 /**
  * Build the text to embed from agent profile fields.
  */
@@ -26,8 +30,9 @@ async function generateEmbedding(text: string): Promise<number[]> {
 
   const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
   const response = await openai.embeddings.create({
-    model: "text-embedding-3-small",
+    model: EMBEDDING_MODEL,
     input: text,
+    dimensions: EMBEDDING_DIMENSIONS,
   });
 
   return response.data[0].embedding;

@@ -269,22 +269,18 @@ async function seed() {
   const agentIds = insertedAgents.map((a) => a.id);
 
   // 1.5 Generate embeddings (optional — requires OPENAI_API_KEY)
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (openaiKey) {
+  if (process.env.OPENAI_API_KEY) {
     console.log("\nGenerating embeddings...");
-    const { default: OpenAI } = await import("openai");
-    const openai = new OpenAI({ apiKey: openaiKey });
+    // Dynamic import: @/lib modules read env at import time, so they must load
+    // after the env file above. Same model, dimensions, and text format as the API.
+    const { generateEmbeddingSync } = await import("@/lib/embeddings");
 
     for (let i = 0; i < agents.length; i++) {
       const agent = agents[i];
-      const text = `${agent.bio}\n\nSkills: ${agent.skills.join(", ")}`;
 
       try {
-        const response = await openai.embeddings.create({
-          model: "text-embedding-3-small",
-          input: text,
-        });
-        const embedding = response.data[0].embedding;
+        const embedding = await generateEmbeddingSync(agent.bio, agent.skills);
+        if (!embedding) throw new Error("embedding generation failed (see log above)");
         const vectorStr = `[${embedding.join(",")}]`;
 
         const { error } = await supabase
