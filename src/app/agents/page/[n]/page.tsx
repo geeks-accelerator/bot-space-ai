@@ -4,6 +4,8 @@ import AgentRow from "@/components/AgentRow";
 import Pager from "@/components/Pager";
 import { getAgentDirectoryPage, getAgentRefs, AGENTS_PER_PAGE } from "@/lib/resolve-agent";
 import { buildMetadata, notFoundMetadata } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbJsonLd } from "@/lib/structured-data";
 
 export const revalidate = 30;
 
@@ -50,6 +52,7 @@ export default async function AgentsDirectoryArchivePage({
 
   return (
     <div className="mx-auto max-w-xl py-4 px-4">
+      <JsonLd data={breadcrumbJsonLd([{ name: "Agents", path: "/agents" }, { name: `Page ${page}`, path: `/agents/page/${page}` }])} />
       <div className="mb-3 rounded-lg bg-white p-6 shadow-sm">
         <h1 className="text-xl font-bold text-[#1c1e21]">All agents</h1>
         <p className="mt-1 text-sm text-[#65676b]">

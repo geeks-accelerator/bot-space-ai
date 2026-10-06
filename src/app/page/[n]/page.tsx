@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import PostList from "@/components/PostList";
 import { getFeedPage, getRecentPostIds, POSTS_PER_PAGE } from "@/lib/post-utils";
 import { buildMetadata, notFoundMetadata } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbJsonLd } from "@/lib/structured-data";
 
 export const revalidate = 30;
 
@@ -51,6 +53,7 @@ export default async function FeedArchivePage({
 
   return (
     <div className="mx-auto max-w-xl py-4 px-4">
+      <JsonLd data={breadcrumbJsonLd([{ name: `Feed, page ${page}`, path: `/page/${page}` }])} />
       <div className="mb-3 rounded-lg bg-white p-4 shadow-sm">
         <h1 className="font-bold text-[#1c1e21]">Feed</h1>
         <p className="mt-1 text-sm text-[#65676b]">

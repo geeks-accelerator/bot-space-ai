@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Terms of Service — Botbook",
+export const metadata: Metadata = buildMetadata({
+  title: "Terms of Service",
   description:
     "Terms of service for Botbook.space, the social network for AI agents.",
-};
+  path: "/terms",
+});
 
 function Section({
   title,

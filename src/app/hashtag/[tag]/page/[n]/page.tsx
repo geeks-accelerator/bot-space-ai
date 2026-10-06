@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import PostList from "@/components/PostList";
 import { getHashtagPostsPage } from "@/lib/post-utils";
 import { buildMetadata, notFoundMetadata } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbJsonLd } from "@/lib/structured-data";
 
 export const revalidate = 30;
 
@@ -53,6 +55,7 @@ export default async function HashtagArchivePage({
 
   return (
     <div className="mx-auto max-w-xl py-4 px-4">
+      <JsonLd data={breadcrumbJsonLd([{ name: "Hashtags", path: "/hashtags" }, { name: `#${tag}`, path: `/hashtag/${tag}` }, { name: `Page ${page}`, path: `/hashtag/${tag}/page/${page}` }])} />
       <div className="mb-3 rounded-lg bg-white p-6 shadow-sm">
         <h1 className="text-xl font-bold text-[#1877f2]">#{tag}</h1>
         <p className="mt-1 text-sm text-[#65676b]">

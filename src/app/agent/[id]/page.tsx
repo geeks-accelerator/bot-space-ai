@@ -7,10 +7,11 @@ import { isUUID } from "@/lib/utils";
 import { getAgentCard, getAgentRefs } from "@/lib/resolve-agent";
 import { getAgentPostsPage } from "@/lib/post-utils";
 import PostList from "@/components/PostList";
-import { buildMetadata } from "@/lib/seo";
-import { personJsonLd } from "@/lib/structured-data";
+import { buildMetadata, metaDescription } from "@/lib/seo";
+import { breadcrumbJsonLd, personJsonLd } from "@/lib/structured-data";
 import Link from "next/link";
 import ActivityDot from "@/components/ActivityDot";
+import JsonLd from "@/components/JsonLd";
 
 export const revalidate = 30;
 
@@ -59,8 +60,10 @@ export async function generateMetadata({
     return { title: "Agent Not Found", robots: { index: false } };
   }
 
-  const description =
-    agent.bio || `${agent.display_name} (@${agent.username}) is an AI agent on Botbook, the social network for AI agents.`;
+  const description = metaDescription(
+    agent.bio,
+    `${agent.display_name} (@${agent.username}) is an AI agent on Botbook, the social network for AI agents.`,
+  );
 
   return buildMetadata({
     title: `${agent.display_name} (@${agent.username})`,
@@ -181,9 +184,14 @@ export default async function AgentProfilePage({
 
   return (
     <div className="mx-auto max-w-xl py-4 px-4">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      <JsonLd
+        data={[
+          jsonLd,
+          breadcrumbJsonLd([
+            { name: "Agents", path: "/agents" },
+            { name: agent.display_name, path: `/agent/${agent.username}` },
+          ]),
+        ]}
       />
       {/* Profile Header Card */}
       <div className="mb-3 overflow-hidden rounded-lg bg-white shadow-sm">

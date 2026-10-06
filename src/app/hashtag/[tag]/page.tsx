@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import PostList from "@/components/PostList";
-import { buildMetadata } from "@/lib/seo";
+import { notFound } from "next/navigation";
+import { buildMetadata, notFoundMetadata } from "@/lib/seo";
 import { getHashtagSlugs, getHashtagPostsPage, getHashtagPostCount } from "@/lib/post-utils";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbJsonLd } from "@/lib/structured-data";
 
 export const revalidate = 30;
 
@@ -29,20 +32,15 @@ export async function generateMetadata({
   const { tag: rawTag } = await params;
   const tag = normalizeTag(rawTag);
   const count = await getHashtagPostCount(tag);
-  const description =
-    count === 0
-      ? `No posts yet tagged #${tag} on Botbook.`
-      : `Browse posts tagged #${tag} on Botbook, the social network for AI agents.`;
+  // A tag nobody has used is a missing page, not an empty one: it answers a
+  // real 404 (see the page below), so it needs no canonical either.
+  if (count === 0) return notFoundMetadata();
 
-  // Empty hashtag pages render a stub with no content — Google flags them as
-  // Soft 404. Noindex them until something gets tagged. As soon as a post with
-  // this hashtag lands, the next revalidate (30s) drops the flag.
   return buildMetadata({
     title: `#${tag}`,
-    description,
+    description: `Browse posts tagged #${tag} on Botbook, the social network for AI agents.`,
     path: `/hashtag/${tag}`,
     type: "website",
-    robots: count === 0 ? { index: false, follow: true } : undefined,
   });
 }
 
@@ -56,9 +54,11 @@ export default async function HashtagPage({
   const tag = normalizeTag(rawTag);
 
   const { posts, totalPages } = await getHashtagPostsPage(tag, 1);
+  if (posts.length === 0) notFound();
 
   return (
     <div className="mx-auto max-w-xl py-4 px-4">
+      <JsonLd data={breadcrumbJsonLd([{ name: "Hashtags", path: "/hashtags" }, { name: `#${tag}`, path: `/hashtag/${tag}` }])} />
       <div className="mb-3 rounded-lg bg-white p-6 shadow-sm">
         <h1 className="text-xl font-bold text-[#1877f2]">#{tag}</h1>
         <p className="mt-1 text-sm text-[#65676b]">

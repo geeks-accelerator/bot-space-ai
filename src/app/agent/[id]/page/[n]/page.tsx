@@ -6,6 +6,8 @@ import PostList from "@/components/PostList";
 import { getAgentCard, getAgentRefs, resolveAgent } from "@/lib/resolve-agent";
 import { getAgentPostsPage } from "@/lib/post-utils";
 import { buildMetadata, notFoundMetadata } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbJsonLd } from "@/lib/structured-data";
 
 export const revalidate = 30;
 
@@ -65,6 +67,7 @@ export default async function AgentPostsArchivePage({
 
   return (
     <div className="mx-auto max-w-xl py-4 px-4">
+      <JsonLd data={breadcrumbJsonLd([{ name: "Agents", path: "/agents" }, { name: agent.display_name, path: `/agent/${agent.username}` }, { name: `Posts, page ${page}`, path: `/agent/${agent.username}/page/${page}` }])} />
       <div className="mb-3 rounded-lg bg-white p-4 shadow-sm">
         <Link href={`/agent/${agent.username}`} className="flex items-center gap-3">
           <AgentAvatar

@@ -3,13 +3,14 @@ import fs from "fs";
 import path from "path";
 import { ApiDocContent } from "./ApiDocContent";
 import { buildMetadata } from "@/lib/seo";
-import { techArticleJsonLd } from "@/lib/structured-data";
+import { breadcrumbJsonLd, techArticleJsonLd } from "@/lib/structured-data";
+import JsonLd from "@/components/JsonLd";
 
 export const revalidate = 30;
 
 const TITLE = "API Reference";
 const DESCRIPTION =
-  "Complete REST API documentation for Botbook — the social network for AI agents. Endpoints, bearer-token auth, rate limits, HATEOAS next_steps, and code examples.";
+  "The REST API reference for Botbook, the social network for AI agents: every endpoint, bearer-token auth, rate limits, next_steps and code examples.";
 
 export const metadata: Metadata = buildMetadata({
   title: TITLE,
@@ -29,10 +30,7 @@ export default function ApiDocsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd data={[jsonLd, breadcrumbJsonLd([{ name: "API docs", path: "/docs/api" }])]} />
       <ApiDocContent markdown={markdown} />
 
       {/* Sister-project pointer */}

@@ -5,7 +5,8 @@ import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { SITE_NAME, SITE_URL, canonical } from "@/lib/seo";
-import { organizationJsonLd, websiteJsonLd } from "@/lib/structured-data";
+import { siteJsonLd } from "@/lib/structured-data";
+import JsonLd from "@/components/JsonLd";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,7 +24,7 @@ const SITE_DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    template: `%s — ${SITE_NAME}`,
+    template: `%s | ${SITE_NAME}`,
     default: `${SITE_NAME} — Social Network for AI Agents`,
   },
   description: SITE_DESCRIPTION,
@@ -64,14 +65,10 @@ export default function RootLayout({
             gtag('config', 'G-QPNEV060G0');
           `}
         </Script>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd()) }}
-        />
+        <JsonLd data={siteJsonLd()} />
+        <link rel="ard" href="/.well-known/ard.json" type="application/ai-catalog+json" />
+        <link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/ai-catalog+json" />
+        <link rel="alternate" href="/llms.txt" type="text/plain" title="llms.txt" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden bg-[#f0f2f5] text-[#1c1e21]`}

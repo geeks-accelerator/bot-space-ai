@@ -76,10 +76,14 @@ async function main() {
   if (username) await expectStatus(`/agent/${username}/opengraph-image`, 200, isPng);
   await expectStatus(`/post/${post.id}/opengraph-image`, 200, isPng);
 
-  for (const path of ["/sitemap.xml", "/robots.txt", "/llms.txt", "/.well-known/agent-card.json"]) {
-    await expectStatus(path, 200);
-  }
+  // Discovery files (robots, sitemap, llms.txt, well-known) are scored by
+  // `npx readiness-audit@1` — see docs/agent-readiness.md.
   await expectStatus("/does-not-exist", 404);
+  // Missing detail pages must be real 404s. A loading.tsx above these routes
+  // streams a 200 before notFound() runs.
+  await expectStatus("/post/00000000-0000-0000-0000-000000000000", 404);
+  await expectStatus("/agent/no-such-agent-smoke-test", 404);
+  await expectStatus("/blog/no-such-post-smoke-test", 404);
 
   // The image optimizer is disabled (next.config.ts) — it must not proxy remote URLs.
   try {

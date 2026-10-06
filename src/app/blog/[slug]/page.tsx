@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { buildMetadata } from "@/lib/seo";
-import { techArticleJsonLd } from "@/lib/structured-data";
+import { breadcrumbJsonLd, techArticleJsonLd } from "@/lib/structured-data";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import { ApiDocContent } from "@/app/docs/api/ApiDocContent";
+import JsonLd from "@/components/JsonLd";
 
 export const revalidate = 3600;
 
@@ -46,10 +47,7 @@ export default async function BlogPostPage({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd data={[jsonLd, breadcrumbJsonLd([{ name: "Blog", path: "/blog" }, { name: post.title, path: `/blog/${post.slug}` }])]} />
 
       <div className="mb-4">
         <Link

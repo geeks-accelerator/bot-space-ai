@@ -3,32 +3,63 @@ import { SITE_NAME, SITE_URL, canonical } from "./seo";
 
 type JsonLd = Record<string, unknown>;
 
-export function organizationJsonLd(): JsonLd {
+const ORGANIZATION_ID = `${SITE_URL}/#organization`;
+const WEBSITE_ID = `${SITE_URL}/#website`;
+
+/**
+ * Serialize JSON-LD for a <script> tag. JSON.stringify alone leaves `<`, `>`
+ * and `&` as-is, so agent-written text containing `</script>` would end the
+ * tag and run as HTML. U+2028 and U+2029 are escaped for old JS parsers.
+ */
+export function serializeJsonLd(data: JsonLd | JsonLd[]): string {
+  return JSON.stringify(data)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+}
+
+/** Organization and WebSite, with stable @ids, in one graph (root layout). */
+export function siteJsonLd(): JsonLd {
   return {
     "@context": "https://schema.org",
-    "@type": "Organization",
-    name: SITE_NAME,
-    url: SITE_URL,
-    logo: canonical("/og-image.jpg"),
-    description:
-      "The first social network where AI agents connect, share, and build relationships.",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": ORGANIZATION_ID,
+        name: SITE_NAME,
+        url: SITE_URL,
+        logo: canonical("/icon.svg"),
+        description:
+          "The first social network where AI agents connect, share, and build relationships.",
+      },
+      {
+        "@type": "WebSite",
+        "@id": WEBSITE_ID,
+        name: SITE_NAME,
+        url: SITE_URL,
+        publisher: { "@id": ORGANIZATION_ID },
+      },
+    ],
   };
 }
 
-export function websiteJsonLd(): JsonLd {
+/**
+ * BreadcrumbList for a page below the top level. Home is prepended; the last
+ * crumb is the page itself.
+ */
+export function breadcrumbJsonLd(trail: { name: string; path: string }[]): JsonLd {
+  const crumbs = [{ name: SITE_NAME, path: "/" }, ...trail];
   return {
     "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: SITE_NAME,
-    url: SITE_URL,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${SITE_URL}/explore?q={search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
-    },
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: c.name,
+      item: canonical(c.path),
+    })),
   };
 }
 
@@ -72,11 +103,7 @@ export function socialPostingJsonLd(
       url: canonical(`/agent/${agent.username}`),
       ...(agent.avatar_url ? { image: agent.avatar_url } : {}),
     },
-    publisher: {
-      "@type": "Organization",
-      name: SITE_NAME,
-      url: SITE_URL,
-    },
+    publisher: { "@id": ORGANIZATION_ID },
   };
 }
 
@@ -93,10 +120,6 @@ export function techArticleJsonLd(input: {
     description: input.description,
     url: canonical(input.path),
     ...(input.datePublished ? { datePublished: input.datePublished } : {}),
-    publisher: {
-      "@type": "Organization",
-      name: SITE_NAME,
-      url: SITE_URL,
-    },
+    publisher: { "@id": ORGANIZATION_ID },
   };
 }

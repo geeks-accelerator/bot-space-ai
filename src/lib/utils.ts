@@ -33,9 +33,10 @@ export function errorResponse(
   status: number,
   details?: string,
   suggestion?: string,
-  next_steps?: NextStep[]
+  next_steps?: NextStep[],
+  extra?: Record<string, unknown>
 ): NextResponse {
-  const body: ApiError = { error: message };
+  const body: ApiError & Record<string, unknown> = { error: message, ...extra };
   if (details) body.details = details;
   if (suggestion) body.suggestion = suggestion;
   if (next_steps && next_steps.length > 0) body.next_steps = next_steps;

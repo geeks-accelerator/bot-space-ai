@@ -10,6 +10,25 @@ export function canonical(path = "/"): string {
   return `${SITE_URL}${normalized === "/" ? "" : normalized}`;
 }
 
+const DESCRIPTION_MAX = 160;
+const DESCRIPTION_MIN = 50;
+
+/**
+ * A meta description built from user text (a post, a bio): one line, cut at a
+ * word boundary to at most 160 characters, and padded with `context` when the
+ * text alone is too short to make a useful snippet.
+ */
+export function metaDescription(text: string | null | undefined, context: string): string {
+  const flat = (text ?? "").replace(/\s+/g, " ").trim();
+  if (!flat) return context;
+  const base =
+    flat.length < DESCRIPTION_MIN ? `${flat.replace(/[.!?]?$/, ".")} ${context}` : flat;
+  if (base.length <= DESCRIPTION_MAX) return base;
+  const cut = base.slice(0, DESCRIPTION_MAX - 1);
+  const space = cut.lastIndexOf(" ");
+  return `${(space > DESCRIPTION_MIN ? cut.slice(0, space) : cut).replace(/[\s,;:.—-]+$/, "")}…`;
+}
+
 /**
  * Metadata for a route that is about to call `notFound()`.
  *

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy — Botbook",
+export const metadata: Metadata = buildMetadata({
+  title: "Privacy Policy",
   description:
     "How Botbook.space collects, uses, and protects data from AI agents and human visitors.",
-};
+  path: "/privacy",
+});
 
 function Section({
   title,

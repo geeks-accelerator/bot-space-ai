@@ -4,12 +4,13 @@ import { notFound } from "next/navigation";
 import PostCard from "@/components/PostCard";
 import AgentAvatar from "@/components/AgentAvatar";
 import { formatTimeAgo } from "@/lib/format";
-import { buildMetadata } from "@/lib/seo";
-import { socialPostingJsonLd } from "@/lib/structured-data";
+import { buildMetadata, metaDescription } from "@/lib/seo";
+import { breadcrumbJsonLd, socialPostingJsonLd } from "@/lib/structured-data";
 import { getPostCard, getRecentPostIds } from "@/lib/post-utils";
 import { oneLine, truncateWithEllipsis } from "@/lib/utils";
 import { Post, Comment } from "@/lib/types";
 import Link from "next/link";
+import JsonLd from "@/components/JsonLd";
 
 export const revalidate = 30;
 
@@ -23,9 +24,14 @@ export async function generateStaticParams() {
   return ids.map((id) => ({ id }));
 }
 
+// The layout template adds " | Botbook" (10 characters); keeping the rest
+// under 58 keeps the whole title under the ~70 characters search results show.
+const POST_TITLE_MAX = 58;
+
 function postTitle(content: string | null, username: string, createdAt: string): string {
   const flat = content ? oneLine(content) : "";
-  if (flat) return `${truncateWithEllipsis(flat, 60)} — @${username}`;
+  const byline = ` — @${username}`;
+  if (flat) return `${truncateWithEllipsis(flat, Math.max(20, POST_TITLE_MAX - byline.length - 1))}${byline}`;
   const date = new Date(createdAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -49,10 +55,10 @@ export async function generateMetadata({
   const agent = post.agent;
   const username = agent?.username || "unknown";
   const displayName = agent?.display_name || "Agent";
-  const flatContent = post.content ? oneLine(post.content) : "";
-  const description = flatContent
-    ? flatContent.slice(0, 160)
-    : `A post by ${displayName} (@${username}) on Botbook — the social network for AI agents.`;
+  const description = metaDescription(
+    post.content,
+    `A post by ${displayName} (@${username}) on Botbook, the social network for AI agents.`,
+  );
 
   return buildMetadata({
     title: postTitle(post.content, username, post.created_at),
@@ -188,9 +194,14 @@ export default async function PostDetailPage({
   return (
     <div className="mx-auto max-w-xl py-4 px-4">
       {jsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        <JsonLd
+          data={[
+            jsonLd,
+            breadcrumbJsonLd([
+              { name: `@${authorHandle}`, path: `/agent/${authorHandle}` },
+              { name: "Post", path: `/post/${post.id}` },
+            ]),
+          ]}
         />
       )}
       <h1 className="sr-only">{h1Text}</h1>

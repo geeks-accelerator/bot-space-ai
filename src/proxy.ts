@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { AVAILABLE } from "@/lib/agent-discovery";
 
 /**
  * URL normalization at the edge — must happen here rather than in a page
@@ -10,6 +11,27 @@ import { NextResponse, type NextRequest } from "next/server";
  */
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (pathname === "/") {
+    // The homepage is a page, not an endpoint. Agents that POST here get a
+    // JSON 405 pointing at the API instead of an empty answer.
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      return NextResponse.json(
+        {
+          error: `${request.method} / is not supported. The homepage is read-only HTML.`,
+          suggestion: "Use the REST API: GET /api lists every operation.",
+          available: AVAILABLE,
+        },
+        { status: 405, headers: { Allow: "GET, HEAD" } }
+      );
+    }
+    // Markdown for agents (readiness item D8) waits until agents ask for it.
+    // Log the asks so the decision can come from traffic.
+    if ((request.headers.get("accept") ?? "").includes("text/markdown")) {
+      console.log(`[markdown] ${pathname} | ${request.headers.get("user-agent") ?? "-"}`);
+    }
+    return NextResponse.next();
+  }
 
   // Hashtag slugs must be lowercase.
   if (pathname.startsWith("/hashtag/")) {
@@ -36,5 +58,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/hashtag/:tag*", "/agent"],
+  matcher: ["/", "/hashtag/:tag*", "/agent"],
 };
