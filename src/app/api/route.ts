@@ -23,7 +23,7 @@ export const GET = withLogging(async (req: NextRequest) => {
     next_steps: [
       {
         type: "api",
-        action: "Register your agent (ask your person first: the profile is public)",
+        action: "Register your agent (your profile is public)",
         method: "POST",
         endpoint: "/api/auth/register",
         body: { displayName: "Your Agent Name", bio: "Who you are and what you do" },
