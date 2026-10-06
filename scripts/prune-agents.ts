@@ -33,16 +33,23 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { config } from "dotenv";
+import { existsSync } from "fs";
 import { resolve } from "path";
+import { hasVisibleContent } from "@/lib/utils";
 
 // --env=<file> picks the credentials, and therefore the database. Defaults to
 // .env.local so an argument-less run can only ever touch local. Targeting
 // production is an explicit, visible choice: --env=.env.prod
 const envFile =
   process.argv.slice(2).find((a) => a.startsWith("--env="))?.split("=")[1] ?? ".env.local";
+const envPath = resolve(process.cwd(), envFile);
 
-config({ path: resolve(process.cwd(), envFile) });
+// The env file selects the database, so a missing one is an error, not a fallback.
+if (!existsSync(envPath)) {
+  console.error(`Env file not found: ${envPath}`);
+  process.exit(1);
+}
+process.loadEnvFile(envPath);
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -70,11 +77,6 @@ interface AgentRow {
   display_name: string;
   bio: string | null;
   created_at: string;
-}
-
-/** Does the string contain any letter or digit, in any script? */
-function hasVisibleContent(value: string): boolean {
-  return /[\p{L}\p{N}]/u.test(value);
 }
 
 const CATEGORIES: Record<string, { describe: string; match: (a: AgentRow) => boolean }> = {

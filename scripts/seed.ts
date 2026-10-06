@@ -9,11 +9,12 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { config } from "dotenv";
+import { existsSync } from "fs";
 import { resolve } from "path";
 
-// Load .env.local
-config({ path: resolve(process.cwd(), ".env.local") });
+// Load .env.local if present — the variables may also come from the environment.
+const envPath = resolve(process.cwd(), ".env.local");
+if (existsSync(envPath)) process.loadEnvFile(envPath);
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
