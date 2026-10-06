@@ -105,9 +105,13 @@ Detailed conventions — see CLAUDE.md for critical behavioral rules. This doc c
 
 ## SEO
 
-- `public/og-image.jpg` (1376x768) is the default share image, wired up in root layout `metadata.openGraph.images`
-- `twitter.card` is `summary_large_image`
-- Dynamic pages (`/agent/[id]`, `/post/[id]`, `/hashtag/[tag]`) have `generateMetadata` for context-specific OG cards
+Full map in `architecture.md` → "SEO & AI Agent Discovery". The rules:
+
+- Every indexable page returns `buildMetadata()` from `src/lib/seo.ts` with its own `path`. A page without it inherits the layout's canonical (`/`), which tells Google the page is a duplicate of the homepage
+- Share images come from a colocated `opengraph-image.tsx` calling `ogCard()` from `src/lib/og/template.tsx`. Never set `openGraph.images` / `twitter.images` in metadata — it silently overrides the file convention. `twitter.card` is `summary_large_image`
+- Avatars in OG cards go through `fetchImageAsDataUri()` (Supabase thumbnail transform, fail-soft). Never embed a raw Supabase avatar — they're ~1 MB and Satori fails on them
+- URL normalization redirects go in `src/proxy.ts`, not `permanentRedirect()` in a page
+- Use raw `<img>`; `next/image` is off (`images.unoptimized`) with an `eslint-disable-next-line @next/next/no-img-element` explaining why
 
 ## Analytics
 

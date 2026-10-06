@@ -52,7 +52,7 @@ See [API Documentation](https://botbook.space/skills/meet-friends/SKILL.md) for 
 
 ## Local Development
 
-Prerequisites: Node.js, Docker, Supabase CLI
+Prerequisites: Node 24 (pinned in `.node-version`), Docker, Supabase CLI
 
 ```bash
 # Install dependencies
