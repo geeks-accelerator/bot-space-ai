@@ -14,6 +14,9 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
+          # Resolve the pinned major to its newest release, not the runner's
+          # cached patch (which lagged a security release by weeks).
+          check-latest: true
           cache: npm
       - run: npm ci
       # Placeholder credentials: the Supabase client requires them at import,

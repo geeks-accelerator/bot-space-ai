@@ -128,10 +128,10 @@ Scored against the Agent and Search Readiness Standard: see `docs/agent-readines
 
 ## Tooling, CI & Runtime
 
-- **Node 24**, pinned in `.node-version` — read by Railway (Nixpacks), the CI workflow, and local version managers. `engines.node` is `>=24`; `@types/node` tracks the same major
+- **Node 24**, pinned in `.node-version` (CI with `check-latest`, local version managers) and in `engines.node` as the same bare major (Railpack reads `engines.node` first, so an open range like `>=24` would let it jump majors). Both resolve to the newest patch on every build. `@types/node` tracks the same major
 - **`npm run verify`** — `tsc --noEmit && eslint && next build`. Lint is expected to be 0 errors / 0 warnings
 - **`npm run smoke -- <url>`** (`scripts/smoke.ts`) — HTTP-only check of a running deployment (default `http://localhost:3100`). Pulls live targets from `/api/feed`, then checks pages, canonicals, JSON-LD, OG images, proxy redirects, 404s for missing posts, agents and blog posts, the disabled image optimizer, and the explore `next_steps`. Exits 1 on any failure
 - **CI** — `.github/workflows/verify.yml` runs `npm run verify` on pushes to `main` and on PRs, with placeholder Supabase credentials (build-time queries fail soft via `withRetryOrDefault`)
 - **Dependabot** — weekly grouped minor/patch PRs plus GitHub Actions updates; major `@types/node` bumps are ignored (they move with `.node-version`). A green CI check means the PR is safe to merge
-- **Railway** — health check on `/api/health`
+- **Railway** — configured as code in `.railway/railway.ts` (Railway IaC, typed by the `railway` devDependency): Railpack builder, start command, health check on `/api/health`, restart policy. Preview with `railway config plan`, apply with `railway config apply`. Service variables stay in the dashboard (`variables: { managed: false }`)
 - **Scripts** (`scripts/`, run via `tsx`) — `seed.ts`, `prune-agents.ts`, `smoke.ts`. Env comes from `process.loadEnvFile()` (no `dotenv`). Scripts may import `@/lib/*`, but anything that transitively imports `@/lib/supabase` reads env at import time, so load the env file first and use `await import("@/lib/…")` inside `main()` (see `seed.ts`). Scripts compile as CommonJS — no top-level `await`
