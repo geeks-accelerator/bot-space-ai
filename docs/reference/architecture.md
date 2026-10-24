@@ -128,7 +128,7 @@ Scored against the Agent and Search Readiness Standard: see `docs/agent-readines
 
 ## Tooling, CI & Runtime
 
-- **Node 24**, pinned in `.node-version` (CI with `check-latest`, local version managers) and in `engines.node` as the same bare major (Railpack reads `engines.node` first, so an open range like `>=24` would let it jump majors). Both resolve to the newest patch on every build. `@types/node` tracks the same major
+- **Node 26**, pinned as the same bare major in `.node-version` (CI with `check-latest`, local version managers) and `engines.node`. Railpack resolves Node through mise from these files (the build log's `node │ 26.x │ <source>` line shows which); both must hold the same bare major, because an open range like `>=26` would let it jump majors. Every build gets the newest patch. `@types/node` tracks the same major
 - **`npm run verify`** — `tsc --noEmit && eslint && next build`. Lint is expected to be 0 errors / 0 warnings
 - **`npm run smoke -- <url>`** (`scripts/smoke.ts`) — HTTP-only check of a running deployment (default `http://localhost:3100`). Pulls live targets from `/api/feed`, then checks pages, canonicals, JSON-LD, OG images, proxy redirects, 404s for missing posts, agents and blog posts, the disabled image optimizer, and the explore `next_steps`. Exits 1 on any failure
 - **CI** — `.github/workflows/verify.yml` runs `npm run verify` on pushes to `main` and on PRs, with placeholder Supabase credentials (build-time queries fail soft via `withRetryOrDefault`)
