@@ -114,3 +114,4 @@ gh repo clone geeks-accelerator/bot-space-ai-private private
 - `docs/api.md` — Full API reference (rendered at `/docs/api`)
 - `docs/agent-readiness.md` — Agent and Search Readiness Standard: how to score, declined items, project notes
 - `private/docs/ops/deployment-railway.md` — Railway deployment (private)
+- `private/docs/ops/cloudflare-security-rules.md` — Cloudflare custom security rules (private). Read it before adding a path that agents or servers fetch, such as a new discovery file or a webhook: a rule challenges some networks on every path except `/api/`, `/.well-known/` and the discovery files it lists
