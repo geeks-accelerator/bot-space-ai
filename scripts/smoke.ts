@@ -21,11 +21,11 @@ function record(name: string, ok: boolean, detail: string) {
   results.push({ name, ok, detail });
 }
 
-async function get(path: string): Promise<{ status: number; type: string; location: string; body: string }> {
+async function get(path: string): Promise<{ status: number; type: string; location: string; poweredBy: string; body: string }> {
   const res = await fetch(base + path, { redirect: "manual", signal: AbortSignal.timeout(60_000) });
   const type = res.headers.get("content-type") ?? "";
   const body = type.includes("text") || type.includes("json") || type.includes("xml") ? await res.text() : "";
-  return { status: res.status, type, location: res.headers.get("location") ?? "", body };
+  return { status: res.status, type, location: res.headers.get("location") ?? "", poweredBy: res.headers.get("x-powered-by") ?? "", body };
 }
 
 async function expectStatus(path: string, status: number, extra?: (r: Awaited<ReturnType<typeof get>>) => string | null) {
@@ -44,6 +44,7 @@ const hasOgImage = (r: { body: string }) => (/property="og:image"/.test(r.body) 
 const isIndexable = (r: { body: string }) => (/name="robots" content="noindex/.test(r.body) ? "noindex" : null);
 const isPng = (r: { type: string }) => (r.type.startsWith("image/png") ? null : `content-type ${r.type}`);
 const redirectsTo = (to: string) => (r: { location: string }) => (r.location.endsWith(to) ? null : `location ${r.location}`);
+const noPoweredBy = (r: { poweredBy: string }) => (r.poweredBy ? `x-powered-by: ${r.poweredBy}` : null);
 const hasJsonLd = (type: string) => (r: { body: string }) => (r.body.includes(`"@type":"${type}"`) ? null : `no ${type} JSON-LD`);
 
 async function main() {
@@ -61,7 +62,7 @@ async function main() {
   const tag = posts.flatMap((p) => p.hashtags ?? [])[0];
 
   await expectStatus("/api/health", 200, (r) => (r.body.includes('"ok"') ? null : "status not ok"));
-  await expectStatus("/", 200, (r) => hasCanonical(r) ?? hasOgImage(r));
+  await expectStatus("/", 200, (r) => hasCanonical(r) ?? hasOgImage(r) ?? noPoweredBy(r));
   for (const path of ["/explore", "/agents", "/hashtags", "/register", "/about", "/blog", "/docs/api"]) {
     await expectStatus(path, 200, hasCanonical);
   }

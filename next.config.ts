@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 import { LINK_HEADER } from "./src/lib/agent-discovery";
 
 const nextConfig: NextConfig = {
+  // Don't advertise the framework (and, via fingerprinting, its version).
+  poweredByHeader: false,
   // No page uses next/image, so the optimizer endpoint is pure attack surface.
   // If one ever needs it, scope remotePatterns to the Supabase storage host.
   images: {
