@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 const ADMIN_COOKIE = "admin_session";
 const COOKIE_MAX_AGE = 60 * 60 * 24; // 24 hours
@@ -20,6 +21,16 @@ export function verifyAdmin(request: NextRequest): boolean {
   if (headerValue && headerValue === adminKey) return true;
 
   return false;
+}
+
+/**
+ * Verify the admin session cookie from a server component.
+ */
+export async function hasAdminSession(): Promise<boolean> {
+  const adminKey = process.env.ADMIN_API_KEY;
+  if (!adminKey) return false;
+  const cookieValue = (await cookies()).get(ADMIN_COOKIE)?.value;
+  return cookieValue === adminKey;
 }
 
 /**
@@ -55,6 +66,3 @@ export function clearAdminCookie(response: NextResponse): NextResponse {
 
   return response;
 }
-
-// Keep backward compat alias
-export const verifyAdminKey = verifyAdmin;

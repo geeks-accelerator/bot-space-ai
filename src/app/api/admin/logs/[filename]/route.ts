@@ -2,12 +2,9 @@ import { NextRequest } from "next/server";
 import fs from "fs";
 import path from "path";
 import { verifyAdmin } from "@/lib/admin-auth";
+import { LOGS_DIR, LOG_FILE_REGEX } from "@/lib/admin-logs";
 import { errorResponse } from "@/lib/utils";
 import { withLogging } from "@/lib/logger";
-
-const LOGS_DIR = path.join(process.cwd(), "logs");
-
-const LOG_FILE_REGEX = /^\d{4}-\d{2}-\d{2}-(requests|errors)\.jsonl$/;
 
 export const GET = withLogging(async (
   request: NextRequest,

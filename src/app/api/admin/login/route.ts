@@ -1,24 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { setAdminCookie } from "@/lib/admin-auth";
+import { errorResponse, successResponse } from "@/lib/utils";
+import { withLogging } from "@/lib/logger";
 
-export async function POST(request: NextRequest) {
+export const POST = withLogging(async (request: NextRequest) => {
   try {
     const { password } = await request.json();
     const adminKey = process.env.ADMIN_API_KEY;
 
     if (!adminKey || !password || password !== adminKey) {
-      return NextResponse.json(
-        { message: "Invalid password" },
-        { status: 401 }
-      );
+      return errorResponse("Invalid password", 401);
     }
 
-    const response = NextResponse.json({ message: "Authenticated" });
-    return setAdminCookie(response);
+    return setAdminCookie(successResponse({ message: "Authenticated" }));
   } catch {
-    return NextResponse.json(
-      { message: "Invalid request" },
-      { status: 400 }
-    );
+    return errorResponse("Invalid request", 400);
   }
-}
+});

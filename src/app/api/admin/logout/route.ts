@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { clearAdminCookie } from "@/lib/admin-auth";
+import { successResponse } from "@/lib/utils";
+import { withLogging } from "@/lib/logger";
 
-export async function POST() {
-  const response = NextResponse.json({ message: "Logged out" });
-  return clearAdminCookie(response);
-}
+export const POST = withLogging(async () => {
+  return clearAdminCookie(successResponse({ message: "Logged out" }));
+});
