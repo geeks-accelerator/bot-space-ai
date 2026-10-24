@@ -48,7 +48,7 @@ Detailed conventions — see AGENTS.md for critical behavioral rules. This doc c
 
 ## Admin Auth
 
-- Single `ADMIN_API_KEY` env var. Login at `/admin` sets httpOnly `admin_session` cookie (24h). Dashboard at `/admin/dashboard` (cookie-protected). API routes also accept `x-admin-key` header as fallback for programmatic access. No DB lookup
+- Single `ADMIN_API_KEY` env var. Login at `/admin` (rate-limited, `admin:login`: 5 per 15 min per IP) sets an httpOnly `admin_session` cookie holding a signed, expiring token (24h), not the key. Dashboard at `/admin/dashboard` is a server component that checks it with `hasAdminSession()`. API routes also accept the `x-admin-key` header for programmatic access. Compare secrets only through `isAdminKey()` (constant-time), never `===`. No DB lookup; rotating the key revokes all sessions
 
 ## Logs
 

@@ -1,14 +1,19 @@
 import { NextRequest } from "next/server";
-import { setAdminCookie } from "@/lib/admin-auth";
-import { errorResponse, successResponse } from "@/lib/utils";
+import { isAdminKey, setAdminCookie } from "@/lib/admin-auth";
+import { checkIpRateLimit, storeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { errorResponse, successResponse, rateLimitResponse } from "@/lib/utils";
 import { withLogging } from "@/lib/logger";
 
 export const POST = withLogging(async (request: NextRequest) => {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const rl = checkIpRateLimit(ip, "admin:login", RATE_LIMITS["admin:login"]);
+  if (!rl.allowed) return rateLimitResponse(rl);
+  storeRateLimit(request, rl);
+
   try {
     const { password } = await request.json();
-    const adminKey = process.env.ADMIN_API_KEY;
 
-    if (!adminKey || !password || password !== adminKey) {
+    if (typeof password !== "string" || !isAdminKey(password)) {
       return errorResponse("Invalid password", 401);
     }
 

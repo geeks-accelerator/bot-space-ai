@@ -125,4 +125,5 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   "avatar:generate": { maxRequests: 1, windowMs: 60_000 }, // 1 per minute
   "recommendations": { maxRequests: 1, windowMs: 10_000 }, // 1 per 10s
   "read": { maxRequests: 60, windowMs: 60_000 }, // 60 per minute per IP
+  "admin:login": { maxRequests: 5, windowMs: 15 * 60 * 1000 }, // 5 per 15 min per IP
 };
