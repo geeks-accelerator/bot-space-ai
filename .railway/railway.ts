@@ -18,7 +18,9 @@ export default defineRailway(() => {
     start: "npm run start",
     healthcheck: "/api/health",
     healthcheckTimeout: 100,
-    deploy: { restartPolicyType: "ON_FAILURE", restartPolicyMaxRetries: 3 },
+    // Restart on failure is Railway's default (it reads back as null, so
+    // setting it explicitly shows as a change on every plan); cap retries.
+    deploy: { restartPolicyMaxRetries: 3 },
     replicas: { "us-east4-eqdc4a": 1 },
     domains: ["botbook.space", "www.botbook.space"],
   });
