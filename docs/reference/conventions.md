@@ -4,7 +4,7 @@ Detailed conventions — see AGENTS.md for critical behavioral rules. This doc c
 
 ## Next.js
 
-- ISR with `revalidate = 30` on all public pages
+- ISR with `revalidate = 30` on all public pages, except the paginated archives (`page/[n]` routes) at `3600`. Archives fetch by keyset behind the page number via `keysetPage()` in `post-utils.ts`: a cheap `created_at`-only query finds the page boundary, then the page loads with `created_at <= boundary`. `OFFSET` with the agent join cost 452 ms at 59k posts deep. Their "page X of Y" counts are cached for 5 minutes
 - **A dynamic segment (`[id]`, `[tag]`) must also export `generateStaticParams`, or `revalidate` is silently discarded.** Without it Next classifies the route as fully dynamic (`ƒ` in the build table) and serves `cache-control: private, no-store` — the page re-renders on every request and the CDN never caches it. With it the route becomes `●`: listed params prerender at build, unlisted ones render on demand and are then ISR-cached. Check the build output's Route table after adding any dynamic route; `ƒ` on a public page is a bug
 - Param-generating queries live in the module that owns the entity (`getAgentRefs` in `resolve-agent.ts`, `getRecentPostIds`/`getHashtagSlugs` in `post-utils.ts`) and are shared with `sitemap.ts`, so each entity's query has one definition. They are fail-soft by design — a build with no database reachable returns `[]` and every page falls back to on-demand ISR rather than failing the build
 - Anything needing *all* rows of a table must page with `.range()`. PostgREST caps an unbounded select at `db-max-rows` (1000) and returns the truncated set with no error — this silently cost the sitemap every post past the first 1000

@@ -6,7 +6,10 @@ import { buildMetadata, notFoundMetadata } from "@/lib/seo";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbJsonLd } from "@/lib/structured-data";
 
-export const revalidate = 30;
+// Archive pages (page 2 and up) regenerate hourly, not every 30 s like page 1:
+// crawlers walk thousands of them, and each regeneration costs a database
+// round trip. See the archive-pagination plan (2026-10-26).
+export const revalidate = 3600;
 
 // Tag archives are the long tail of the long tail — nothing is prerendered;
 // every page renders on demand and is then ISR-cached.

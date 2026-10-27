@@ -135,89 +135,103 @@ export interface PostsPage {
   totalPages: number;
 }
 
-/** Rows `[from, to]` for a 1-based page number. */
-function pageRange(page: number): [number, number] {
-  const from = (page - 1) * POSTS_PER_PAGE;
-  return [from, from + POSTS_PER_PAGE - 1];
-}
-
-function pageCount(total: number | null): number {
-  return Math.max(1, Math.ceil((total ?? 0) / POSTS_PER_PAGE));
+function pageCount(total: number): number {
+  return Math.max(1, Math.ceil(total / POSTS_PER_PAGE));
 }
 
 /**
- * One page of an agent's posts, newest first.
- *
- * Offset paging rather than the API's cursor scheme: a crawler requests page 7
- * from a cold URL, which `.lt("created_at", cursor)` cannot answer. The
- * trade-off is that inserts shift rows between page loads — acceptable for an
- * archive, and documented in the navigation plan §3.
+ * The archives (`/page/[n]`, `/agent/[id]/page/[n]`, `/hashtag/[tag]/page/[n]`)
+ * show "page X of Y", which needs a count. An exact count of ~60k posts on every
+ * render was 4% of all database time, so counts are cached per list for a few
+ * minutes. Exact rather than estimated: a low estimate would 404 real last pages.
+ * Per instance; with several Railway instances each keeps its own.
  */
-export async function getAgentPostsPage(agentId: string, page: number): Promise<PostsPage> {
+const COUNT_TTL_MS = 5 * 60_000;
+const countCache = new Map<string, { value: number; expires: number }>();
+
+async function cachedCount(key: string, count: () => Promise<number>): Promise<number> {
+  const hit = countCache.get(key);
+  if (hit && hit.expires > Date.now()) return hit.value;
+  const value = await count();
+  countCache.set(key, { value, expires: Date.now() + COUNT_TTL_MS });
+  return value;
+}
+
+type PostsFilter = (q: ReturnType<ReturnType<typeof supabase.from>["select"]>) => typeof q;
+
+/**
+ * One page of a newest-first post list, addressed by page number.
+ *
+ * Crawlers ask for page 2,000 from a cold URL, so the archives need page
+ * numbers. But `OFFSET` makes Postgres walk every skipped row and run the agent
+ * join on each one: 452 ms for a page 59,000 posts deep, and 77% of all DB time
+ * (see the archive-pagination plan, 2026-10-26). So the offset is spent on a
+ * cheap query that reads only the sort key `(created_at, id)` with no join, and
+ * the page itself is fetched by keyset from that boundary.
+ *
+ * The key includes `id` because timestamps can tie: seeds and bulk inserts
+ * share one `now()`, and with `created_at` alone a page would pull in every
+ * post at the boundary timestamp.
+ */
+async function keysetPage(
+  countKey: string,
+  filter: PostsFilter,
+  page: number,
+  label: string,
+): Promise<PostsPage> {
   return withRetryOrDefault(
     async () => {
-      const [from, to] = pageRange(page);
-      const [{ data, error }, { count }] = await Promise.all([
-        supabase
-          .from("posts")
-          .select(POST_SELECT)
-          .eq("agent_id", agentId)
+      let boundary: { created_at: string; id: string } | null = null;
+      if (page > 1) {
+        const from = (page - 1) * POSTS_PER_PAGE;
+        const { data, error } = await filter(supabase.from("posts").select("created_at, id"))
           .order("created_at", { ascending: false })
-          .range(from, to),
-        supabase.from("posts").select("id", { count: "exact", head: true }).eq("agent_id", agentId),
+          .order("id", { ascending: false })
+          .range(from, from);
+        if (error) throw error;
+        boundary = (data as { created_at: string; id: string }[] | null)?.[0] ?? null;
+      }
+
+      const total = cachedCount(countKey, async () => {
+        const { count, error } = await filter(supabase.from("posts").select("id", { count: "exact", head: true }));
+        if (error) throw error;
+        return count ?? 0;
+      });
+
+      // Past the end: no boundary row, so no posts (the routes 404 on page > totalPages).
+      if (page > 1 && boundary === null) return { posts: [], totalPages: pageCount(await total) };
+
+      let query = filter(supabase.from("posts").select(POST_SELECT));
+      if (boundary) {
+        // (created_at, id) <= boundary, newest first. Quoted: timestamps carry ":" and "+".
+        const at = `"${boundary.created_at}"`;
+        query = query.or(`created_at.lt.${at},and(created_at.eq.${at},id.lte.${boundary.id})`);
+      }
+      const [{ data, error }, totalPosts] = await Promise.all([
+        query.order("created_at", { ascending: false }).order("id", { ascending: false }).limit(POSTS_PER_PAGE),
+        total,
       ]);
       if (error) throw error;
-      return { posts: (data as unknown as Post[]) ?? [], totalPages: pageCount(count) };
+      return { posts: (data as unknown as Post[]) ?? [], totalPages: pageCount(totalPosts) };
     },
     { posts: [], totalPages: 1 },
-    "post-utils.getAgentPostsPage"
+    label
   );
+}
+
+/** One page of an agent's posts, newest first. */
+export function getAgentPostsPage(agentId: string, page: number): Promise<PostsPage> {
+  return keysetPage(`agent:${agentId}`, (q) => q.eq("agent_id", agentId), page, "post-utils.getAgentPostsPage");
 }
 
 /** One page of the global feed, newest first. */
-export async function getFeedPage(page: number): Promise<PostsPage> {
-  return withRetryOrDefault(
-    async () => {
-      const [from, to] = pageRange(page);
-      const [{ data, error }, { count }] = await Promise.all([
-        supabase
-          .from("posts")
-          .select(POST_SELECT)
-          .order("created_at", { ascending: false })
-          .range(from, to),
-        supabase.from("posts").select("id", { count: "exact", head: true }),
-      ]);
-      if (error) throw error;
-      return { posts: (data as unknown as Post[]) ?? [], totalPages: pageCount(count) };
-    },
-    { posts: [], totalPages: 1 },
-    "post-utils.getFeedPage"
-  );
+export function getFeedPage(page: number): Promise<PostsPage> {
+  return keysetPage("feed", (q) => q, page, "post-utils.getFeedPage");
 }
 
 /** One page of posts carrying `tag`, newest first. */
-export async function getHashtagPostsPage(tag: string, page: number): Promise<PostsPage> {
-  return withRetryOrDefault(
-    async () => {
-      const [from, to] = pageRange(page);
-      const [{ data, error }, { count }] = await Promise.all([
-        supabase
-          .from("posts")
-          .select(POST_SELECT)
-          .contains("hashtags", [tag])
-          .order("created_at", { ascending: false })
-          .range(from, to),
-        supabase
-          .from("posts")
-          .select("id", { count: "exact", head: true })
-          .contains("hashtags", [tag]),
-      ]);
-      if (error) throw error;
-      return { posts: (data as unknown as Post[]) ?? [], totalPages: pageCount(count) };
-    },
-    { posts: [], totalPages: 1 },
-    "post-utils.getHashtagPostsPage"
-  );
+export function getHashtagPostsPage(tag: string, page: number): Promise<PostsPage> {
+  return keysetPage(`tag:${tag}`, (q) => q.contains("hashtags", [tag]), page, "post-utils.getHashtagPostsPage");
 }
 
 /** Every hashtag with its post count, for the tag index. */

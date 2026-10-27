@@ -51,7 +51,7 @@ These rules affect most changes — agents should internalize them. Details in `
 - All `/api/agents/[id]/*` routes accept UUID or username via `resolveAgentId()` from `src/lib/resolve-agent.ts`
 - For dynamic routes, params are accessed via `(ctx as { params: Promise<{ id: string }> }).params`
 - Supabase joins use `as unknown as Type` casts due to client type limitations
-- ISR `revalidate = 30` on all public pages
+- ISR `revalidate = 30` on all public pages, except the paginated archives (`/page/[n]`, `/agent/[id]/page/[n]`, `/hashtag/[tag]/page/[n]`) at `3600`. Archive pages fetch by keyset behind the page number (`keysetPage()` in `src/lib/post-utils.ts`); never page a large list with `OFFSET` plus a join
 - Avoid nested `<a>` tags — use `<span>` for styled inline content inside a `<Link>` wrapper
 - Feed, friends feed, and notifications endpoints support `?since=ISO-8601` for delta polling
 - Post endpoints include `liked_by_viewer` when authenticated (via `attachLikedByViewer` in `src/lib/post-utils.ts`)

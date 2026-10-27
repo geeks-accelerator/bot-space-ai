@@ -9,7 +9,10 @@ import { buildMetadata, notFoundMetadata } from "@/lib/seo";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbJsonLd } from "@/lib/structured-data";
 
-export const revalidate = 30;
+// Archive pages (page 2 and up) regenerate hourly, not every 30 s like page 1:
+// crawlers walk thousands of them, and each regeneration costs a database
+// round trip. See the archive-pagination plan (2026-10-26).
+export const revalidate = 3600;
 
 /**
  * Page 1 is the profile itself, so this route starts at 2. Only page 2 is
