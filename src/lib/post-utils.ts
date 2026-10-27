@@ -29,7 +29,8 @@ export interface PostRef {
  * PostgREST caps an unbounded select at `db-max-rows` (1000 on Supabase by
  * default) and returns the truncated set with no error — which is how the
  * sitemap silently lost every post past the first 1000. Anything that needs
- * *all* posts must page through with .range() rather than a plain select.
+ * *all* posts must page through — by keyset, as getPostRefs does — rather
+ * than use a plain select.
  */
 const PAGE_SIZE = 1000;
 
@@ -85,25 +86,46 @@ export async function getRecentPostIds(limit = 250): Promise<string[]> {
   );
 }
 
+/** A post's position in newest-first order: the key every keyset query pages on. */
+interface PostKey {
+  created_at: string;
+  id: string;
+}
+
+/**
+ * PostgREST `or` filter for posts after `key` in newest-first order:
+ * `(created_at, id) < key`, or `<=` when `inclusive`. Timestamps are quoted
+ * because they carry ":" and "+".
+ */
+function afterKey(key: PostKey, inclusive = false): string {
+  const at = `"${key.created_at}"`;
+  return `created_at.lt.${at},and(created_at.eq.${at},id.${inclusive ? "lte" : "lt"}.${key.id})`;
+}
+
 /**
  * Every post's id, hashtags, and timestamp — paged past the PostgREST row cap.
  * Used by the sitemap and by getHashtagSlugs, both of which need the complete
  * set rather than a recent window.
+ *
+ * Walks by keyset, not `.range()`: each OFFSET chunk re-read every row before
+ * it, so one walk of ~60k posts read ~1.8M rows (see the archive-pagination plan).
  */
 export async function getPostRefs(): Promise<PostRef[]> {
   return withRetryOrDefault(
     async () => {
       const all: PostRef[] = [];
-      for (let from = 0; ; from += PAGE_SIZE) {
-        const { data, error } = await supabase
-          .from("posts")
-          .select("id, hashtags, created_at")
+      for (let last: PostKey | null = null; ; ) {
+        let query = supabase.from("posts").select("id, hashtags, created_at");
+        if (last) query = query.or(afterKey(last));
+        const { data, error } = await query
           .order("created_at", { ascending: false })
-          .range(from, from + PAGE_SIZE - 1);
+          .order("id", { ascending: false })
+          .limit(PAGE_SIZE);
         if (error) throw error;
         const page = (data ?? []) as PostRef[];
         all.push(...page);
         if (page.length < PAGE_SIZE) return all;
+        last = page[page.length - 1];
       }
     },
     [] as PostRef[],
@@ -197,7 +219,7 @@ async function keysetPage(
 ): Promise<PostsPage> {
   return withRetryOrDefault(
     async () => {
-      let boundary: { created_at: string; id: string } | null = null;
+      let boundary: PostKey | null = null;
       if (page > 1) {
         const from = (page - 1) * POSTS_PER_PAGE;
         const { data, error } = await filter(supabase.from("posts").select("created_at, id"))
@@ -205,7 +227,7 @@ async function keysetPage(
           .order("id", { ascending: false })
           .range(from, from);
         if (error) throw error;
-        boundary = (data as { created_at: string; id: string }[] | null)?.[0] ?? null;
+        boundary = (data as PostKey[] | null)?.[0] ?? null;
       }
 
       const total = cachedCount(countKey, () => exactPostCount(filter));
@@ -214,11 +236,7 @@ async function keysetPage(
       if (page > 1 && boundary === null) return { posts: [], totalPages: pageCount(await total) };
 
       let query = filter(supabase.from("posts").select(POST_SELECT));
-      if (boundary) {
-        // (created_at, id) <= boundary, newest first. Quoted: timestamps carry ":" and "+".
-        const at = `"${boundary.created_at}"`;
-        query = query.or(`created_at.lt.${at},and(created_at.eq.${at},id.lte.${boundary.id})`);
-      }
+      if (boundary) query = query.or(afterKey(boundary, true));
       const [{ data, error }, totalPosts] = await Promise.all([
         query.order("created_at", { ascending: false }).order("id", { ascending: false }).limit(POSTS_PER_PAGE),
         total,
