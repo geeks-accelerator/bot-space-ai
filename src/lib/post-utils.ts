@@ -148,16 +148,32 @@ function pageCount(total: number): number {
  */
 const COUNT_TTL_MS = 5 * 60_000;
 const countCache = new Map<string, { value: number; expires: number }>();
+let lastCountSweep = Date.now();
 
 async function cachedCount(key: string, count: () => Promise<number>): Promise<number> {
+  const now = Date.now();
+  // Same lazy sweep as rate-limit.ts, so per-agent and per-tag keys don't pile up.
+  if (now - lastCountSweep > COUNT_TTL_MS) {
+    lastCountSweep = now;
+    for (const [k, v] of countCache) if (v.expires <= now) countCache.delete(k);
+  }
   const hit = countCache.get(key);
-  if (hit && hit.expires > Date.now()) return hit.value;
+  if (hit && hit.expires > now) return hit.value;
   const value = await count();
-  countCache.set(key, { value, expires: Date.now() + COUNT_TTL_MS });
+  countCache.set(key, { value, expires: now + COUNT_TTL_MS });
   return value;
 }
 
 type PostsFilter = (q: ReturnType<ReturnType<typeof supabase.from>["select"]>) => typeof q;
+
+/** Exact count of the posts a filter selects — a `head` query that returns no rows. */
+async function exactPostCount(filter: PostsFilter): Promise<number> {
+  const { count, error } = await filter(supabase.from("posts").select("id", { count: "exact", head: true }));
+  if (error) throw error;
+  return count ?? 0;
+}
+
+const byHashtag = (tag: string): PostsFilter => (q) => q.contains("hashtags", [tag]);
 
 /**
  * One page of a newest-first post list, addressed by page number.
@@ -192,11 +208,7 @@ async function keysetPage(
         boundary = (data as { created_at: string; id: string }[] | null)?.[0] ?? null;
       }
 
-      const total = cachedCount(countKey, async () => {
-        const { count, error } = await filter(supabase.from("posts").select("id", { count: "exact", head: true }));
-        if (error) throw error;
-        return count ?? 0;
-      });
+      const total = cachedCount(countKey, () => exactPostCount(filter));
 
       // Past the end: no boundary row, so no posts (the routes 404 on page > totalPages).
       if (page > 1 && boundary === null) return { posts: [], totalPages: pageCount(await total) };
@@ -231,7 +243,7 @@ export function getFeedPage(page: number): Promise<PostsPage> {
 
 /** One page of posts carrying `tag`, newest first. */
 export function getHashtagPostsPage(tag: string, page: number): Promise<PostsPage> {
-  return keysetPage(`tag:${tag}`, (q) => q.contains("hashtags", [tag]), page, "post-utils.getHashtagPostsPage");
+  return keysetPage(`tag:${tag}`, byHashtag(tag), page, "post-utils.getHashtagPostsPage");
 }
 
 /** Every hashtag with its post count, for the tag index. */
@@ -249,24 +261,12 @@ export async function getHashtagCounts(refs?: PostRef[]): Promise<Array<{ tag: s
 }
 
 /**
- * One hashtag's post count — a `head: true` query that never materializes rows.
- * Cheap enough for the hashtag page's generateMetadata (to noindex empty tags
- * so Google stops flagging them as Soft 404) and for its OG route to call
- * independently without a shared cache.
+ * One hashtag's post count, exact and uncached: the hashtag page's metadata and
+ * its OG route use it to 404 unused tags. Unlike the archive counts, a cached
+ * zero here would 404 a brand-new tag for minutes after its first post.
  */
 export async function getHashtagPostCount(tag: string): Promise<number> {
-  return withRetryOrDefault(
-    async () => {
-      const { count, error } = await supabase
-        .from("posts")
-        .select("id", { count: "exact", head: true })
-        .contains("hashtags", [tag]);
-      if (error) throw error;
-      return count ?? 0;
-    },
-    0,
-    "post-utils.getHashtagPostCount"
-  );
+  return withRetryOrDefault(() => exactPostCount(byHashtag(tag)), 0, "post-utils.getHashtagPostCount");
 }
 
 /**
