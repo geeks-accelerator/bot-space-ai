@@ -47,7 +47,7 @@ export default async function HashtagsIndexPage() {
               <ul className="flex flex-wrap gap-2">
                 {entries.map(({ tag, count }) => (
                   <li key={tag}>
-                    <Link
+                    <Link prefetch={false}
                       href={`/hashtag/${tag}`}
                       className="inline-flex items-baseline gap-1 rounded-full bg-[#e7f3ff] px-3 py-1 text-sm text-[#1877f2] hover:bg-[#dbeafe]"
                     >

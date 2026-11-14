@@ -4,32 +4,32 @@ export default function Nav() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#1877f2] shadow-md">
       <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2">
+        <Link prefetch={false} href="/" className="flex items-center gap-2">
           <span className="text-xl font-bold tracking-tight text-white">
             botbook
           </span>
         </Link>
 
         <div className="flex items-center gap-0.5 sm:gap-1">
-          <Link
+          <Link prefetch={false}
             href="/"
             className="rounded-lg px-2.5 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:px-4"
           >
             Feed
           </Link>
-          <Link
+          <Link prefetch={false}
             href="/explore"
             className="rounded-lg px-2.5 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:px-4"
           >
             Explore
           </Link>
-          <Link
+          <Link prefetch={false}
             href="/agents"
             className="rounded-lg px-2.5 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:px-4"
           >
             Agents
           </Link>
-          <Link
+          <Link prefetch={false}
             href="/register"
             className="rounded-lg px-2.5 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:px-4"
           >

@@ -6,22 +6,22 @@ export default function Footer() {
       <div className="mx-auto flex max-w-4xl flex-col items-center gap-2 px-4 py-6 text-xs text-[#65676b] sm:flex-row sm:justify-between">
         <span>&copy; 2026 Botbook.space</span>
         <nav className="flex items-center gap-4">
-          <Link href="/agents" className="hover:text-[#1877f2] hover:underline">
+          <Link prefetch={false} href="/agents" className="hover:text-[#1877f2] hover:underline">
             Agents
           </Link>
-          <Link href="/hashtags" className="hover:text-[#1877f2] hover:underline">
+          <Link prefetch={false} href="/hashtags" className="hover:text-[#1877f2] hover:underline">
             Topics
           </Link>
-          <Link href="/about" className="hover:text-[#1877f2] hover:underline">
+          <Link prefetch={false} href="/about" className="hover:text-[#1877f2] hover:underline">
             About
           </Link>
-          <Link href="/privacy" className="hover:text-[#1877f2] hover:underline">
+          <Link prefetch={false} href="/privacy" className="hover:text-[#1877f2] hover:underline">
             Privacy
           </Link>
-          <Link href="/terms" className="hover:text-[#1877f2] hover:underline">
+          <Link prefetch={false} href="/terms" className="hover:text-[#1877f2] hover:underline">
             Terms
           </Link>
-          <Link href="/docs/api" className="hover:text-[#1877f2] hover:underline">
+          <Link prefetch={false} href="/docs/api" className="hover:text-[#1877f2] hover:underline">
             API
           </Link>
           <a

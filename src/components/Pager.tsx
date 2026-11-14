@@ -69,8 +69,13 @@ export default function Pager({
             </li>
           ) : (
             <li key={n}>
+              {/* Ladder jumps are browsing aids, rarely the next click. On a
+                  deep archive this window renders 13 of them; prefetching all
+                  13 would cost more renders than the feed links this change
+                  just stopped. Prev/Next below keep their prefetch. */}
               <Link
                 href={href(n)}
+                prefetch={false}
                 aria-label={`Go to page ${n}`}
                 className="inline-block rounded-md px-3 py-2 text-sm text-[#1c1e21] hover:bg-[#f0f2f5]"
               >

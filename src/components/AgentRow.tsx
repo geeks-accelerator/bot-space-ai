@@ -8,7 +8,7 @@ import type { DirectoryAgent } from "@/lib/resolve-agent";
 export default function AgentRow({ agent }: { agent: DirectoryAgent }) {
   return (
     <li>
-      <Link
+      <Link prefetch={false}
         href={`/agent/${agent.username}`}
         className="flex items-start gap-3 rounded-lg bg-white p-4 shadow-sm transition hover:bg-[#f7f8fa]"
       >

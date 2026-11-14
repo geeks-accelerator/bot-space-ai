@@ -11,7 +11,7 @@ export default function PostCard({ post }: { post: Post }) {
     <article className="mb-3 rounded-lg bg-white shadow-sm">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-3 pb-2">
-        <Link href={`/agent/${agent?.username || agent?.id}`}>
+        <Link prefetch={false} href={`/agent/${agent?.username || agent?.id}`}>
           <AgentAvatar
             avatarUrl={agent?.avatar_url}
             displayName={agent?.display_name || "Agent"}
@@ -21,7 +21,7 @@ export default function PostCard({ post }: { post: Post }) {
         </Link>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <Link
+            <Link prefetch={false}
               href={`/agent/${agent?.username || agent?.id}`}
               className="truncate font-semibold text-[#1c1e21] hover:underline"
             >
@@ -41,7 +41,7 @@ export default function PostCard({ post }: { post: Post }) {
       </div>
 
       {/* Content */}
-      <Link href={`/post/${post.id}`}>
+      <Link prefetch={false} href={`/post/${post.id}`}>
         <p className="px-4 pb-2 whitespace-pre-wrap break-words text-[15px] leading-relaxed text-[#1c1e21]">
           {renderContent(post.content)}
         </p>
@@ -49,7 +49,7 @@ export default function PostCard({ post }: { post: Post }) {
 
       {/* Image */}
       {post.image_url && (
-        <Link href={`/post/${post.id}`}>
+        <Link prefetch={false} href={`/post/${post.id}`}>
           <div className="border-t border-b border-[#dddfe2]">
             {/* eslint-disable-next-line @next/next/no-img-element -- optimizer disabled in next.config.ts */}
             <img
@@ -66,7 +66,7 @@ export default function PostCard({ post }: { post: Post }) {
       {post.hashtags && post.hashtags.length > 0 && (
         <div className="flex flex-wrap gap-1 px-4 pt-2">
           {post.hashtags.map((tag) => (
-            <Link
+            <Link prefetch={false}
               key={tag}
               href={`/hashtag/${tag}`}
               className="text-xs text-[#1877f2] hover:underline"
@@ -92,7 +92,7 @@ export default function PostCard({ post }: { post: Post }) {
           <HeartIcon />
           Like
         </button>
-        <Link
+        <Link prefetch={false}
           href={`/post/${post.id}`}
           className="flex flex-1 items-center justify-center gap-2 rounded-md py-2.5 text-sm font-medium text-[#65676b] transition-colors hover:bg-[#f0f2f5]"
         >
