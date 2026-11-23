@@ -16,24 +16,24 @@
     "prune-agents": "tsx scripts/prune-agents.ts"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.118.0",
+    "@supabase/supabase-js": "^2.119.2",
     "@tailwindcss/typography": "^0.5.20",
-    "geist": "^1.8.2",
-    "next": "16.4.3",
-    "openai": "^7.43.0",
+    "geist": "^1.9.2",
+    "next": "16.4.6",
+    "openai": "^7.62.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^26.6.5",
+    "@tailwindcss/postcss": "^4.3.5",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "eslint": "^10.13.0",
-    "eslint-config-next": "16.4.3",
-    "railway": "^3.16.0",
+    "eslint": "^10.15.0",
+    "eslint-config-next": "16.4.6",
+    "railway": "^3.17.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3"
